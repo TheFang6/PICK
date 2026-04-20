@@ -17,7 +17,7 @@
 ### Phase 2 — Core Logic (2-3 วัน)
 
 - [x] [004 — Recommendation Pipeline](./004-recommendation-pipeline.md)
-- [ ] [005 — History Tracking](./005-history-tracking.md)
+- [x] [005 — History Tracking](./005-history-tracking.md)
 - [ ] [006 — Blacklist System](./006-blacklist-system.md)
 - [ ] [007 — Gacha Mode](./007-gacha-mode.md)
 
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 4
+- Done: 5
 - In Progress: 0
 - Blocked: 0
 

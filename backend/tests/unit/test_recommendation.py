@@ -161,7 +161,9 @@ class TestRecommendEndpoint:
 
         from app.services.recommendation import recommend
 
-        with patch("app.services.recommendation.restaurant_repo"):
+        with patch("app.services.recommendation.restaurant_repo"), \
+             patch("app.services.recommendation.history_repo") as mock_history:
+            mock_history.get_recent_restaurant_ids.return_value = set()
             result = await recommend(
                 db=None,
                 user_ids=[uuid.uuid4()],
@@ -181,7 +183,9 @@ class TestRecommendEndpoint:
 
         from app.services.recommendation import recommend
 
-        with patch("app.services.recommendation.restaurant_repo"):
+        with patch("app.services.recommendation.restaurant_repo"), \
+             patch("app.services.recommendation.history_repo") as mock_history:
+            mock_history.get_recent_restaurant_ids.return_value = set()
             result = await recommend(
                 db=None,
                 user_ids=[uuid.uuid4()],
