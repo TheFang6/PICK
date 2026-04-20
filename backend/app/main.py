@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.attendance import router as attendance_router
 from app.api.blacklist import router as blacklist_router
 from app.api.dev import router as dev_router
 from app.api.gacha import router as gacha_router
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(attendance_router)
 app.include_router(dev_router)
 app.include_router(restaurants_router)
 app.include_router(recommend_router)

@@ -1,5 +1,6 @@
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
+from app.bot.handlers.attendance import in_handler, wfh_handler
 from app.bot.handlers.help import help_handler
 from app.bot.handlers.start import start_handler
 from app.bot.handlers.unknown import unknown_handler
@@ -19,6 +20,8 @@ async def get_application() -> Application:
         )
         _application.add_handler(CommandHandler("start", start_handler))
         _application.add_handler(CommandHandler("help", help_handler))
+        _application.add_handler(CommandHandler("wfh", wfh_handler))
+        _application.add_handler(CommandHandler("in", in_handler))
         _application.add_handler(
             MessageHandler(filters.COMMAND, unknown_handler)
         )
