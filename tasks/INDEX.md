@@ -10,13 +10,13 @@
 
 ### Phase 1 — Foundation (2-3 วัน)
 
-- [ ] [001 — Project Setup](./001-project-setup.md)
-- [ ] [002 — Google Maps Integration](./002-google-maps-integration.md)
-- [ ] [003 — Restaurants Schema & CRUD](./003-restaurants-schema-crud.md)
+- [x] [001 — Project Setup](./001-project-setup.md)
+- [x] [002 — Google Maps Integration](./002-google-maps-integration.md)
+- [x] [003 — Restaurants Schema & CRUD](./003-restaurants-schema-crud.md)
 
 ### Phase 2 — Core Logic (2-3 วัน)
 
-- [ ] [004 — Recommendation Pipeline](./004-recommendation-pipeline.md)
+- [x] [004 — Recommendation Pipeline](./004-recommendation-pipeline.md)
 - [ ] [005 — History Tracking](./005-history-tracking.md)
 - [ ] [006 — Blacklist System](./006-blacklist-system.md)
 - [ ] [007 — Gacha Mode](./007-gacha-mode.md)
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 0
+- Done: 4
 - In Progress: 0
 - Blocked: 0
 
