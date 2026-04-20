@@ -19,8 +19,11 @@ backend/
 │   │
 │   ├── bot/                      # Telegram bot framework
 │   │   ├── application.py        # Bot app setup (python-telegram-bot v20+, async)
+│   │   ├── poll_timeout.py       # Background poll expiry checker (complete + announce winner)
 │   │   ├── handlers/             # Command handlers
 │   │   │   ├── attendance.py      # /wfh and /in — attendance status commands
+│   │   │   ├── lunch.py          # /lunch — recommend restaurants, create poll with inline keyboard
+│   │   │   ├── poll_callbacks.py # Callback handlers: vote, cancel, gacha button presses
 │   │   │   ├── start.py          # /start — user registration + pairing token
 │   │   │   ├── help.py           # /help — list all commands
 │   │   │   └── unknown.py        # Unknown command fallback
@@ -33,6 +36,7 @@ backend/
 │   │   ├── google_maps.py        # Google Maps Places API (search_nearby, get_photo_url)
 │   │   ├── history_repo.py       # Lunch history CRUD (log_lunch, get_recent, user/team history)
 │   │   ├── pairing_repo.py       # Pairing token CRUD (create, validate, consume, cleanup)
+│   │   ├── poll_repo.py          # Poll CRUD (create, vote, counts, winner, expire, cancel, complete)
 │   │   ├── recommendation.py     # 5-stage recommendation pipeline (with history + blacklist filter)
 │   │   ├── restaurant_repo.py    # Restaurant CRUD operations (upsert, list, update, delete)
 │   │   ├── session_pool.py       # In-memory session pool cache (create, get, expire, TTL 2hr)
@@ -42,6 +46,7 @@ backend/
 │   │   ├── attendance.py         # UserAttendance model (user_id, date, status) + AttendanceStatus enum
 │   │   ├── lunch_history.py      # LunchHistory model (restaurant_id, date, attendees)
 │   │   ├── pairing_token.py      # PairingToken model (token, user_id, expires_at, consumed_at)
+│   │   ├── poll.py               # PollSession + PollVote models, PollStatus enum (ACTIVE/COMPLETED/CANCELLED)
 │   │   ├── restaurant.py         # Restaurant model + RestaurantSource enum
 │   │   ├── user.py               # User model (telegram_id, name)
 │   │   └── user_blacklist.py     # UserBlacklist model (user_id, restaurant_id, mode, expires_at)
@@ -66,6 +71,7 @@ backend/
 │       ├── test_recommendation.py # Recommendation pipeline tests (19 cases)
 │       ├── test_restaurants.py   # Restaurant CRUD + API tests (18 cases)
 │       ├── test_attendance.py    # Attendance repo + handlers + API tests (16 cases)
+│       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (24 cases)
 │       └── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
 │
 ├── alembic/                      # Database migrations
@@ -75,10 +81,12 @@ backend/
 │       ├── 1991e2f3d3bc_...py    # Create lunch_history table
 │       ├── 855e8189a896_...py    # Create user_blacklist table
 │       ├── 7b1ab9603757_...py    # Create pairing_tokens table
-│       └── ef50f8b44f33_...py    # Create user_attendance table
+│       ├── ef50f8b44f33_...py    # Create user_attendance table
+│       └── a367868b9af9_...py    # Create poll_sessions + poll_votes tables
 │
 ├── scripts/                      # Utility scripts
 │   ├── check_db.py               # DB connection check
+│   ├── run_polling.py            # Run bot in polling mode (local dev) with timeout loop
 │   └── setup_webhook.py          # Set up Telegram bot webhook
 │
 ├── alembic.ini                   # Alembic settings
