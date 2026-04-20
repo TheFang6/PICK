@@ -23,7 +23,7 @@
 
 ### Phase 3 — Telegram Bot (2-3 วัน)
 
-- [ ] [008 — Telegram Bot Foundation](./008-telegram-bot-foundation.md)
+- [x] [008 — Telegram Bot Foundation](./008-telegram-bot-foundation.md)
 - [ ] [009 — Attendance System](./009-attendance-system.md)
 - [ ] [010 — Lunch & Poll Flow](./010-lunch-poll-flow.md)
 - [ ] [011 — Gacha Bot Integration](./011-gacha-bot-integration.md)
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 7
+- Done: 8
 - In Progress: 0
 - Blocked: 0
 
