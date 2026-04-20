@@ -10,16 +10,19 @@ backend/
 │   ├── api/                      # API layer — receives HTTP requests, returns responses
 │   │   ├── blacklist.py          # POST /blacklist, DELETE /blacklist/{id}, GET /blacklist
 │   │   ├── dev.py                # Developer/debug endpoints
+│   │   ├── gacha.py              # POST /gacha/{session_id} — reshuffle picks
 │   │   ├── history.py            # GET /history, GET /history/team, POST /history
 │   │   ├── recommend.py          # POST /recommend — restaurant recommendation
 │   │   └── restaurants.py        # CRUD /restaurants + POST /restaurants/sync-from-maps
 │   │
 │   ├── services/                 # Business logic — core processing, external API calls
 │   │   ├── blacklist_repo.py     # Blacklist CRUD (add, remove, list, get_ids, cleanup_expired)
+│   │   ├── gacha.py              # Gacha roll logic (reshuffle from pool, limit 5 rolls)
 │   │   ├── google_maps.py        # Google Maps Places API (search_nearby, get_photo_url)
 │   │   ├── history_repo.py       # Lunch history CRUD (log_lunch, get_recent, user/team history)
 │   │   ├── recommendation.py     # 5-stage recommendation pipeline (with history + blacklist filter)
-│   │   └── restaurant_repo.py    # Restaurant CRUD operations (upsert, list, update, delete)
+│   │   ├── restaurant_repo.py    # Restaurant CRUD operations (upsert, list, update, delete)
+│   │   └── session_pool.py       # In-memory session pool cache (create, get, expire, TTL 2hr)
 │   │
 │   ├── models/                   # SQLAlchemy ORM models — database table definitions
 │   │   ├── lunch_history.py      # LunchHistory model (restaurant_id, date, attendees)
@@ -30,6 +33,7 @@ backend/
 │   ├── schemas/                  # Pydantic schemas — request/response validation
 │   │   ├── google_maps.py        # Google Maps API response schema
 │   │   ├── blacklist.py           # BlacklistAddRequest, BlacklistResponse
+│   │   ├── gacha.py              # GachaResult
 │   │   ├── history.py            # LogLunchRequest, LunchHistoryResponse
 │   │   ├── recommendation.py     # RecommendRequest, RecommendationResult
 │   │   └── restaurant.py         # RestaurantResponse, ManualRestaurantCreate, RestaurantUpdate
@@ -39,6 +43,7 @@ backend/
 ├── tests/                        # Test suite
 │   └── unit/                     # Unit tests
 │       ├── test_blacklist.py      # Blacklist repo + API + recommendation filter tests (21 cases)
+│       ├── test_gacha.py         # Session pool + gacha roll + API tests (20 cases)
 │       ├── test_google_maps.py   # Google Maps service tests (10 cases)
 │       ├── test_health.py        # Health endpoint test (1 case)
 │       ├── test_history.py       # History repo + API + recommendation filter tests (19 cases)

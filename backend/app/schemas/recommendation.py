@@ -15,3 +15,4 @@ class RecommendationResult(BaseModel):
     candidates: list[RestaurantResponse]
     pool: list[RestaurantResponse]
     session_id: str
+    remaining_rolls: int

@@ -34,4 +34,5 @@ async def recommend_restaurants(
         candidates=[RestaurantResponse.model_validate(r) for r in result["candidates"]],
         pool=[RestaurantResponse.model_validate(r) for r in result["pool"]],
         session_id=result["session_id"],
+        remaining_rolls=result["remaining_rolls"],
     )
