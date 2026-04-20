@@ -11,5 +11,6 @@ async def nearby_restaurants(
     lat: float = Query(..., description="Latitude"),
     lng: float = Query(..., description="Longitude"),
     radius: int = Query(1000, ge=100, le=5000, description="Search radius in meters"),
+    language: str | None = Query(None, description="Language code (e.g. th, en, ja)"),
 ):
-    return await search_nearby(lat=lat, lng=lng, radius=radius)
+    return await search_nearby(lat=lat, lng=lng, radius=radius, language=language)

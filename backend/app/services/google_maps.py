@@ -45,6 +45,7 @@ async def search_nearby(
     lng: float,
     radius: int = 1000,
     type: str = "restaurant",
+    language: str | None = None,
 ) -> NearbySearchResponse:
     client = await get_client()
     params = {
@@ -53,6 +54,8 @@ async def search_nearby(
         "type": type,
         "key": settings.google_maps_api_key,
     }
+    if language:
+        params["language"] = language
 
     try:
         resp = await client.get(NEARBY_SEARCH_URL, params=params)
