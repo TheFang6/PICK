@@ -18,7 +18,7 @@
 
 - [x] [004 — Recommendation Pipeline](./004-recommendation-pipeline.md)
 - [x] [005 — History Tracking](./005-history-tracking.md)
-- [ ] [006 — Blacklist System](./006-blacklist-system.md)
+- [x] [006 — Blacklist System](./006-blacklist-system.md)
 - [ ] [007 — Gacha Mode](./007-gacha-mode.md)
 
 ### Phase 3 — Telegram Bot (2-3 วัน)
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 5
+- Done: 6
 - In Progress: 0
 - Blocked: 0
 

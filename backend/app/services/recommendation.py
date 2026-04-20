@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.restaurant import Restaurant, RestaurantSource
 from app.schemas.google_maps import Restaurant as MapsRestaurant
 from app.services.google_maps import search_nearby
-from app.services import history_repo, restaurant_repo
+from app.services import blacklist_repo, history_repo, restaurant_repo
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +51,14 @@ def filter_restaurants(
     office_lng = context.get("office_lng")
     radius = context.get("radius", 1000)
     recent_restaurant_ids = context.get("recent_restaurant_ids", set())
+    blacklisted_ids = context.get("blacklisted_ids", set())
 
     filtered = []
     for r in candidates:
         if r.id in recent_restaurant_ids:
+            continue
+
+        if r.id in blacklisted_ids:
             continue
 
         if r.source == RestaurantSource.GOOGLE_MAPS:
@@ -165,6 +169,7 @@ async def recommend(
     candidates = await fetch_candidates(db, office_lat, office_lng, radius)
 
     recent_restaurant_ids = history_repo.get_recent_restaurant_ids(db, user_ids, days=7)
+    blacklisted_ids = blacklist_repo.get_blacklisted_restaurant_ids(db, user_ids)
 
     context = {
         "today_weekday": datetime.now(timezone.utc).weekday(),
@@ -174,6 +179,7 @@ async def recommend(
         "office_lng": office_lng,
         "radius": radius,
         "recent_restaurant_ids": recent_restaurant_ids,
+        "blacklisted_ids": blacklisted_ids,
     }
 
     filtered = filter_restaurants(candidates, context)
