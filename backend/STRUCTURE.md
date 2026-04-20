@@ -8,6 +8,7 @@ backend/
 │   ├── database.py               # SQLAlchemy engine, session factory, get_db dependency
 │   │
 │   ├── api/                      # API layer — receives HTTP requests, returns responses
+│   │   ├── attendance.py         # GET /attendance/today — today's office attendees
 │   │   ├── blacklist.py          # POST /blacklist, DELETE /blacklist/{id}, GET /blacklist
 │   │   ├── dev.py                # Developer/debug endpoints
 │   │   ├── gacha.py              # POST /gacha/{session_id} — reshuffle picks
@@ -19,12 +20,14 @@ backend/
 │   ├── bot/                      # Telegram bot framework
 │   │   ├── application.py        # Bot app setup (python-telegram-bot v20+, async)
 │   │   ├── handlers/             # Command handlers
+│   │   │   ├── attendance.py      # /wfh and /in — attendance status commands
 │   │   │   ├── start.py          # /start — user registration + pairing token
 │   │   │   ├── help.py           # /help — list all commands
 │   │   │   └── unknown.py        # Unknown command fallback
 │   │   └── utils/                # Bot utilities (keyboards, formatters)
 │   │
 │   ├── services/                 # Business logic — core processing, external API calls
+│   │   ├── attendance_repo.py    # Attendance CRUD (set_status, get_today, get_attendees, drop_unknown)
 │   │   ├── blacklist_repo.py     # Blacklist CRUD (add, remove, list, get_ids, cleanup_expired)
 │   │   ├── gacha.py              # Gacha roll logic (reshuffle from pool, limit 5 rolls)
 │   │   ├── google_maps.py        # Google Maps Places API (search_nearby, get_photo_url)
@@ -36,6 +39,7 @@ backend/
 │   │   └── user_repo.py          # User upsert by telegram_id
 │   │
 │   ├── models/                   # SQLAlchemy ORM models — database table definitions
+│   │   ├── attendance.py         # UserAttendance model (user_id, date, status) + AttendanceStatus enum
 │   │   ├── lunch_history.py      # LunchHistory model (restaurant_id, date, attendees)
 │   │   ├── pairing_token.py      # PairingToken model (token, user_id, expires_at, consumed_at)
 │   │   ├── restaurant.py         # Restaurant model + RestaurantSource enum
@@ -61,6 +65,7 @@ backend/
 │       ├── test_history.py       # History repo + API + recommendation filter tests (19 cases)
 │       ├── test_recommendation.py # Recommendation pipeline tests (19 cases)
 │       ├── test_restaurants.py   # Restaurant CRUD + API tests (18 cases)
+│       ├── test_attendance.py    # Attendance repo + handlers + API tests (16 cases)
 │       └── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
 │
 ├── alembic/                      # Database migrations
@@ -69,7 +74,8 @@ backend/
 │       ├── 995ad0e072c8_...py    # Create users + restaurants tables
 │       ├── 1991e2f3d3bc_...py    # Create lunch_history table
 │       ├── 855e8189a896_...py    # Create user_blacklist table
-│       └── 7b1ab9603757_...py    # Create pairing_tokens table
+│       ├── 7b1ab9603757_...py    # Create pairing_tokens table
+│       └── ef50f8b44f33_...py    # Create user_attendance table
 │
 ├── scripts/                      # Utility scripts
 │   ├── check_db.py               # DB connection check

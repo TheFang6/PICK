@@ -1,3 +1,4 @@
+from app.models.attendance import AttendanceStatus, UserAttendance  # noqa: F401
 from app.models.lunch_history import LunchHistory  # noqa: F401
 from app.models.pairing_token import PairingToken  # noqa: F401
 from app.models.restaurant import Restaurant, RestaurantSource  # noqa: F401
