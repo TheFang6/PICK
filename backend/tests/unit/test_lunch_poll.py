@@ -332,7 +332,7 @@ class TestVoteCallback:
     @pytest.mark.asyncio
     async def test_vote_success(self):
         query = AsyncMock()
-        query.data = f"vote:{uuid.uuid4()}:{uuid.uuid4()}"
+        query.data = f"vote:{uuid.uuid4()}:0"
         query.from_user = MagicMock()
         query.from_user.id = 12345
         query.from_user.full_name = "Test"
@@ -380,7 +380,7 @@ class TestVoteCallback:
     @pytest.mark.asyncio
     async def test_vote_poll_ended(self):
         query = AsyncMock()
-        query.data = f"vote:{uuid.uuid4()}:{uuid.uuid4()}"
+        query.data = f"vote:{uuid.uuid4()}:0"
         query.answer = AsyncMock()
 
         update = MagicMock()

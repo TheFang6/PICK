@@ -21,17 +21,23 @@ async def vote_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if len(parts) != 3:
         return
 
-    _, poll_id_str, restaurant_id_str = parts
+    _, poll_id_str, index_str = parts
 
     db = SessionLocal()
     try:
         poll_id = uuid.UUID(poll_id_str)
-        restaurant_id = uuid.UUID(restaurant_id_str)
+        candidate_index = int(index_str)
 
         poll = poll_repo.get_poll(db, poll_id)
         if not poll or poll.status != PollStatus.ACTIVE:
             await query.answer("This poll has ended.", show_alert=True)
             return
+
+        if candidate_index < 0 or candidate_index >= len(poll.candidates):
+            await query.answer("Invalid option.", show_alert=True)
+            return
+
+        restaurant_id = uuid.UUID(poll.candidates[candidate_index])
 
         telegram_id = str(query.from_user.id)
         user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, query.from_user.full_name or "Unknown")
