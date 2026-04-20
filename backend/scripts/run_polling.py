@@ -18,6 +18,12 @@ load_dotenv(override=True)
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters  # noqa: E402
 
 from app.bot.handlers.attendance import in_handler, wfh_handler  # noqa: E402
+from app.bot.handlers.blacklist import (  # noqa: E402
+    blacklist_handler,
+    blacklist_mode_callback,
+    blacklist_pick_callback,
+    blacklist_remove_callback,
+)
 from app.bot.handlers.gacha_solo import gacha_confirm_callback, gacha_handler, gacha_reroll_callback  # noqa: E402
 from app.bot.handlers.help import help_handler  # noqa: E402
 from app.bot.handlers.lunch import dm_pick_callback, lunch_handler  # noqa: E402
@@ -41,12 +47,16 @@ async def main():
     app.add_handler(CommandHandler("in", in_handler))
     app.add_handler(CommandHandler("lunch", lunch_handler))
     app.add_handler(CommandHandler("gacha", gacha_handler))
+    app.add_handler(CommandHandler("blacklist", blacklist_handler))
     app.add_handler(CallbackQueryHandler(vote_callback, pattern=r"^vote:"))
     app.add_handler(CallbackQueryHandler(cancel_callback, pattern=r"^cancel:"))
     app.add_handler(CallbackQueryHandler(gacha_callback, pattern=r"^gacha:"))
     app.add_handler(CallbackQueryHandler(dm_pick_callback, pattern=r"^dm_pick:"))
     app.add_handler(CallbackQueryHandler(gacha_confirm_callback, pattern=r"^gacha_ok:"))
     app.add_handler(CallbackQueryHandler(gacha_reroll_callback, pattern=r"^gacha_reroll"))
+    app.add_handler(CallbackQueryHandler(blacklist_pick_callback, pattern=r"^bl_pick:"))
+    app.add_handler(CallbackQueryHandler(blacklist_mode_callback, pattern=r"^bl_mode:"))
+    app.add_handler(CallbackQueryHandler(blacklist_remove_callback, pattern=r"^bl_rm:"))
     app.add_handler(MessageHandler(filters.COMMAND, unknown_handler))
 
     logging.info("Bot starting in polling mode...")
