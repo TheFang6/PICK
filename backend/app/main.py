@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.dev import router as dev_router
+from app.api.restaurants import router as restaurants_router
 
 app = FastAPI(title="Pick API", version="0.1.0")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(dev_router)
+app.include_router(restaurants_router)
 
 
 @app.get("/health")
