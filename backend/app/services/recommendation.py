@@ -10,10 +10,9 @@ from app.models.restaurant import Restaurant, RestaurantSource
 from app.schemas.google_maps import Restaurant as MapsRestaurant
 from app.services.google_maps import search_nearby
 from app.services import blacklist_repo, history_repo, restaurant_repo
+from app.services.session_pool import MAX_GACHA_ROLLS, create_session, add_previous_picks
 
 logger = logging.getLogger(__name__)
-
-_pool_cache: dict[str, dict] = {}
 
 
 def _haversine(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -187,14 +186,12 @@ async def recommend(
     pool = select_pool(scored, pool_size=10)
     picks = sample_candidates(pool, k=3)
 
-    session_id = str(uuid.uuid4())
-    _pool_cache[session_id] = {
-        "pool": pool,
-        "created_at": datetime.now(timezone.utc),
-    }
+    session_id = create_session(pool)
+    add_previous_picks(session_id, {r.id for r in picks})
 
     return {
         "candidates": picks,
         "pool": [r for r, _ in pool],
         "session_id": session_id,
+        "remaining_rolls": MAX_GACHA_ROLLS,
     }
