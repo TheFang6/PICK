@@ -27,9 +27,9 @@ async def blacklist_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not args:
         await update.message.reply_text(
             "📋 Blacklist commands:\n\n"
-            "/blacklist add <name> — Add to blacklist\n"
-            "/blacklist list — View blacklisted restaurants\n"
-            "/blacklist remove <name> — Remove from blacklist"
+            "/blacklist add <ชื่อร้าน> — เพิ่มร้านเข้า blacklist\n"
+            "/blacklist list — ดูร้านที่ blacklist\n"
+            "/blacklist remove <ชื่อร้าน> — ลบร้านออกจาก blacklist"
         )
         return
 
@@ -43,12 +43,12 @@ async def blacklist_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     elif subcommand == "remove":
         await _blacklist_remove(update, context, rest_args)
     else:
-        await update.message.reply_text("Unknown command. Try /blacklist add, /blacklist list, or /blacklist remove")
+        await update.message.reply_text("ไม่เข้าใจคำสั่ง ลอง /blacklist add, /blacklist list, หรือ /blacklist remove")
 
 
 async def _blacklist_add(update: Update, context: ContextTypes.DEFAULT_TYPE, query: str) -> None:
     if not query:
-        await update.message.reply_text("Please specify a restaurant name, e.g. /blacklist add Somtam")
+        await update.message.reply_text("กรุณาระบุชื่อร้าน เช่น /blacklist add ส้มตำ")
         return
 
     db = SessionLocal()
@@ -56,20 +56,20 @@ async def _blacklist_add(update: Update, context: ContextTypes.DEFAULT_TYPE, que
         matches = _search_restaurants(db, query)
 
         if not matches:
-            await update.message.reply_text(f"Restaurant \"{query}\" not found. Try again")
+            await update.message.reply_text(f"ไม่เจอร้าน \"{query}\" ลองค้นใหม่")
             return
 
         if len(matches) == 1:
             restaurant = matches[0]
             keyboard = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🚫 Permanent", callback_data=f"bl_mode:{restaurant.id}:permanent"),
-                    InlineKeyboardButton("📅 Today only", callback_data=f"bl_mode:{restaurant.id}:today"),
+                    InlineKeyboardButton("🚫 ถาวร", callback_data=f"bl_mode:{restaurant.id}:permanent"),
+                    InlineKeyboardButton("📅 แค่วันนี้", callback_data=f"bl_mode:{restaurant.id}:today"),
                 ],
-                [InlineKeyboardButton("❌ Cancel", callback_data="bl_mode:cancel")],
+                [InlineKeyboardButton("❌ ยกเลิก", callback_data="bl_mode:cancel")],
             ])
             await update.message.reply_text(
-                f"Blacklist \"{restaurant.name}\"? Choose mode:",
+                f"Blacklist \"{restaurant.name}\" แบบไหน?",
                 reply_markup=keyboard,
             )
             return
@@ -77,10 +77,10 @@ async def _blacklist_add(update: Update, context: ContextTypes.DEFAULT_TYPE, que
         buttons = []
         for r in matches[:5]:
             buttons.append([InlineKeyboardButton(r.name, callback_data=f"bl_pick:{r.id}")])
-        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="bl_pick:cancel")])
+        buttons.append([InlineKeyboardButton("❌ ยกเลิก", callback_data="bl_pick:cancel")])
 
         await update.message.reply_text(
-            f"Found {len(matches)} restaurants. Pick one:",
+            f"เจอ {len(matches)} ร้าน เลือกร้านที่ต้องการ:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
     except Exception:
@@ -99,7 +99,7 @@ async def _blacklist_list(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         entries = blacklist_repo.list_by_user(db, user.id)
 
         if not entries:
-            await update.message.reply_text("No restaurants in your blacklist")
+            await update.message.reply_text("ยังไม่มีร้านใน blacklist")
             return
 
         permanent = []
@@ -112,13 +112,13 @@ async def _blacklist_list(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             else:
                 today_only.append(name)
 
-        lines = ["📋 Your Blacklist:\n"]
+        lines = ["📋 Blacklist ของคุณ:\n"]
         if permanent:
-            lines.append(f"🚫 Permanent ({len(permanent)}):")
+            lines.append(f"🚫 ถาวร ({len(permanent)}):")
             for name in permanent:
                 lines.append(f"  • {name}")
         if today_only:
-            lines.append(f"\n📅 Today only ({len(today_only)}):")
+            lines.append(f"\n📅 แค่วันนี้ ({len(today_only)}):")
             for name in today_only:
                 lines.append(f"  • {name}")
 
@@ -132,7 +132,7 @@ async def _blacklist_list(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def _blacklist_remove(update: Update, context: ContextTypes.DEFAULT_TYPE, query: str) -> None:
     if not query:
-        await update.message.reply_text("Please specify a restaurant name, e.g. /blacklist remove Somtam")
+        await update.message.reply_text("กรุณาระบุชื่อร้าน เช่น /blacklist remove ส้มตำ")
         return
 
     telegram_id = str(update.effective_user.id)
@@ -150,22 +150,22 @@ async def _blacklist_remove(update: Update, context: ContextTypes.DEFAULT_TYPE, 
                 matching.append((e, r))
 
         if not matching:
-            await update.message.reply_text(f"\"{query}\" not found in your blacklist")
+            await update.message.reply_text(f"ไม่เจอร้าน \"{query}\" ใน blacklist ของคุณ")
             return
 
         if len(matching) == 1:
             entry, restaurant = matching[0]
             blacklist_repo.remove(db, user.id, entry.id)
-            await update.message.reply_text(f"Removed \"{restaurant.name}\" from blacklist ✅")
+            await update.message.reply_text(f"ลบ \"{restaurant.name}\" ออกจาก blacklist แล้ว ✅")
             return
 
         buttons = []
         for entry, r in matching[:5]:
             buttons.append([InlineKeyboardButton(r.name, callback_data=f"bl_rm:{entry.id}")])
-        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="bl_rm:cancel")])
+        buttons.append([InlineKeyboardButton("❌ ยกเลิก", callback_data="bl_rm:cancel")])
 
         await update.message.reply_text(
-            "Multiple matches. Pick one to remove:",
+            "เจอหลายร้าน เลือกร้านที่ต้องการลบ:",
             reply_markup=InlineKeyboardMarkup(buttons),
         )
     except Exception:
@@ -188,7 +188,7 @@ async def blacklist_pick_callback(update: Update, context: ContextTypes.DEFAULT_
     _, restaurant_id_str = parts
 
     if restaurant_id_str == "cancel":
-        await query.edit_message_text("Cancelled")
+        await query.edit_message_text("ยกเลิกแล้ว")
         return
 
     try:
@@ -200,18 +200,18 @@ async def blacklist_pick_callback(update: Update, context: ContextTypes.DEFAULT_
     try:
         restaurant = restaurant_repo.get_by_id(db, restaurant_id)
         if not restaurant:
-            await query.edit_message_text("Restaurant not found")
+            await query.edit_message_text("ไม่เจอร้านนี้แล้ว")
             return
 
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚫 Permanent", callback_data=f"bl_mode:{restaurant.id}:permanent"),
-                InlineKeyboardButton("📅 Today only", callback_data=f"bl_mode:{restaurant.id}:today"),
+                InlineKeyboardButton("🚫 ถาวร", callback_data=f"bl_mode:{restaurant.id}:permanent"),
+                InlineKeyboardButton("📅 แค่วันนี้", callback_data=f"bl_mode:{restaurant.id}:today"),
             ],
-            [InlineKeyboardButton("❌ Cancel", callback_data="bl_mode:cancel")],
+            [InlineKeyboardButton("❌ ยกเลิก", callback_data="bl_mode:cancel")],
         ])
         await query.edit_message_text(
-            f"Blacklist \"{restaurant.name}\"? Choose mode:",
+            f"Blacklist \"{restaurant.name}\" แบบไหน?",
             reply_markup=keyboard,
         )
     except Exception:
@@ -228,7 +228,7 @@ async def blacklist_mode_callback(update: Update, context: ContextTypes.DEFAULT_
 
     parts = query.data.split(":")
     if parts[1] == "cancel":
-        await query.edit_message_text("Cancelled")
+        await query.edit_message_text("ยกเลิกแล้ว")
         return
 
     if len(parts) != 3:
@@ -245,15 +245,15 @@ async def blacklist_mode_callback(update: Update, context: ContextTypes.DEFAULT_
         restaurant = restaurant_repo.get_by_id(db, restaurant_id)
 
         if not restaurant:
-            await query.edit_message_text("Restaurant not found")
+            await query.edit_message_text("ไม่เจอร้านนี้แล้ว")
             return
 
         mode = BlacklistMode.PERMANENT if mode_str == "permanent" else BlacklistMode.TODAY
         blacklist_repo.add(db, user.id, restaurant_id, mode)
 
-        mode_text = "permanent" if mode == BlacklistMode.PERMANENT else "today only"
+        mode_text = "ถาวร" if mode == BlacklistMode.PERMANENT else "แค่วันนี้"
         await query.edit_message_text(
-            f"Added \"{restaurant.name}\" to blacklist ({mode_text}) ✅"
+            f"เพิ่ม \"{restaurant.name}\" เข้า blacklist ({mode_text}) แล้วครับ ✅"
         )
     except Exception:
         logger.exception("Error in blacklist mode callback")
@@ -274,7 +274,7 @@ async def blacklist_remove_callback(update: Update, context: ContextTypes.DEFAUL
     _, entry_id_str = parts
 
     if entry_id_str == "cancel":
-        await query.edit_message_text("Cancelled")
+        await query.edit_message_text("ยกเลิกแล้ว")
         return
 
     telegram_id = str(query.from_user.id)
@@ -286,9 +286,9 @@ async def blacklist_remove_callback(update: Update, context: ContextTypes.DEFAUL
 
         removed = blacklist_repo.remove(db, user.id, entry_id)
         if removed:
-            await query.edit_message_text("Removed from blacklist ✅")
+            await query.edit_message_text("ลบออกจาก blacklist แล้ว ✅")
         else:
-            await query.edit_message_text("Not found in blacklist")
+            await query.edit_message_text("ไม่เจอรายการนี้ใน blacklist")
     except Exception:
         logger.exception("Error in blacklist remove callback")
     finally:
