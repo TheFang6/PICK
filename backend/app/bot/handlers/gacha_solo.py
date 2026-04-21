@@ -33,7 +33,7 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         candidates = result["candidates"]
         if not candidates:
-            await update.message.reply_text("ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant")
+            await update.message.reply_text("No restaurants found. Try adding one with /addrestaurant")
             return
 
         pick = candidates[0]
@@ -52,7 +52,7 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             distance = f"{int(d)}m"
 
         rating = f"\u2B50 {pick.rating}" if pick.rating else ""
-        parts = [f"\U0001F3AF วันนี้ไปร้านนี้เลยนะ\n"]
+        parts = [f"\U0001F3AF Today's pick!\n"]
         parts.append(f"\U0001F35C {pick.name}")
         if distance or rating:
             parts.append(f"   {distance} {rating}".strip())

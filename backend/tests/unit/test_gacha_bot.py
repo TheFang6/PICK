@@ -212,7 +212,7 @@ class TestGachaSoloHandler:
             mock_hist_repo.log_lunch.assert_called_once_with(mock_db, mock_restaurant.id, [mock_user.id])
             call_args = mock_update.message.reply_text.call_args[0][0]
             assert "ส้มตำนัว" in call_args
-            assert "วันนี้ไปร้านนี้เลยนะ" in call_args
+            assert "Today's pick" in call_args
 
     @pytest.mark.asyncio
     async def test_gacha_solo_no_restaurants(self, mock_update, mock_context):
@@ -240,7 +240,7 @@ class TestGachaSoloHandler:
             await gacha_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args[0][0]
-            assert "ไม่เจอร้านอาหาร" in call_args
+            assert "No restaurants found" in call_args
 
     @pytest.mark.asyncio
     async def test_gacha_solo_error(self, mock_update, mock_context):
