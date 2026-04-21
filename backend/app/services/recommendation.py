@@ -186,6 +186,13 @@ async def recommend(
     pool = select_pool(scored, pool_size=10)
     picks = sample_candidates(pool, k=3)
 
+    if db is not None:
+        for r, _ in pool:
+            try:
+                db.expunge(r)
+            except Exception:
+                pass
+
     session_id = create_session(pool)
     add_previous_picks(session_id, {r.id for r in picks})
 
