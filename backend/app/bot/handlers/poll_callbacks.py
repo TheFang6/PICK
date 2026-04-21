@@ -1,4 +1,5 @@
 import logging
+import random
 import uuid
 
 from telegram import Update
@@ -7,7 +8,6 @@ from telegram.ext import ContextTypes
 from app.database import SessionLocal
 from app.models.poll import PollStatus
 from app.services import history_repo, poll_repo, restaurant_repo, user_repo
-from app.services.gacha import GachaLimitExceeded, SessionExpired, SessionNotFound, roll
 
 logger = logging.getLogger(__name__)
 
@@ -123,32 +123,45 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await query.answer("This poll has ended.", show_alert=True)
             return
 
-        if not poll.session_id:
-            await query.answer("No gacha pool available.", show_alert=True)
+        candidate_ids = [uuid.UUID(cid) for cid in poll.candidates]
+        restaurants = []
+        for cid in candidate_ids:
+            r = restaurant_repo.get_by_id(db, cid)
+            if r:
+                restaurants.append(r)
+
+        if not restaurants:
+            await query.answer("No restaurants to pick from.", show_alert=True)
             return
 
-        try:
-            result = roll(poll.session_id)
-        except (SessionNotFound, SessionExpired):
-            await query.answer("Gacha session expired.", show_alert=True)
-            return
-        except GachaLimitExceeded:
-            await query.answer("Max gacha rolls reached (5).", show_alert=True)
-            return
+        pick = random.choice(restaurants)
 
-        new_candidates = result["candidates"]
-        new_candidate_ids = [r.id for r in new_candidates]
-        poll.candidates = [str(cid) for cid in new_candidate_ids]
-        poll_repo.reset_votes(db, poll.id)
-        db.commit()
+        voter_ids = poll_repo.get_voter_ids(db, poll_id)
+        if voter_ids:
+            history_repo.log_lunch(db, pick.id, voter_ids)
 
-        from app.bot.handlers.lunch import _build_poll_text, _build_poll_keyboard
-        text = _build_poll_text(new_candidates)
-        remaining = result["remaining_rolls"]
-        text += f"\n\n\U0001F3B2 Gacha! ({remaining} rolls left)"
-        keyboard = _build_poll_keyboard(poll.id, new_candidates)
+        poll_repo.complete_poll(db, poll_id, pick.id)
 
-        await query.edit_message_text(text, reply_markup=keyboard)
+        distance = ""
+        if pick.lat and pick.lng:
+            from math import atan2, cos, radians, sin, sqrt
+            R = 6371000
+            olat, olng = 13.756331, 100.501762
+            rlat1, rlat2 = radians(olat), radians(pick.lat)
+            dlat = radians(pick.lat - olat)
+            dlng = radians(pick.lng - olng)
+            a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
+            d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
+            distance = f"{int(d)}m"
+
+        rating = f"⭐ {pick.rating}" if pick.rating else ""
+        lines = ["\U0001F3B2 Gacha picked!\n"]
+        lines.append(f"\U0001F35C {pick.name}")
+        if distance or rating:
+            lines.append(f"   {distance} {rating}".strip())
+        lines.append("\nEnjoy your meal! \U0001F60B")
+
+        await query.edit_message_text("\n".join(lines))
     except Exception:
         logger.exception("Error in gacha callback")
     finally:
