@@ -213,7 +213,7 @@ class TestGachaSoloHandler:
             call_args = mock_update.message.reply_text.call_args
             text = call_args[0][0]
             assert "ส้มตำนัว" in text
-            assert "สุ่มได้ร้านนี้" in text
+            assert "Pick for you" in text
             reply_markup = call_args[1]["reply_markup"]
             buttons = reply_markup.inline_keyboard[0]
             assert "gacha_ok:" in buttons[0].callback_data
@@ -245,7 +245,7 @@ class TestGachaSoloHandler:
             await gacha_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args[0][0]
-            assert "ไม่เจอร้านอาหาร" in call_args
+            assert "No restaurants found" in call_args
 
     @pytest.mark.asyncio
     async def test_gacha_solo_error(self, mock_update, mock_context):
@@ -301,7 +301,7 @@ class TestGachaConfirmCallback:
                 mock_db, str(restaurant_id), [mock_user.id]
             )
             query.edit_message_text.assert_called_once()
-            assert "บันทึกแล้ว" in query.edit_message_text.call_args[0][0]
+            assert "Saved" in query.edit_message_text.call_args[0][0]
 
 
 class TestGachaRerollCallback:
@@ -397,4 +397,4 @@ class TestGachaRerollCallback:
             await gacha_reroll_callback(update, context)
 
             call_args = query.edit_message_text.call_args[0][0]
-            assert "ไม่เจอร้านอาหาร" in call_args
+            assert "No restaurants found" in call_args

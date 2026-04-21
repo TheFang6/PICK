@@ -28,11 +28,11 @@ def _format_pick(pick):
         distance = f"{int(d)}m"
 
     rating = f"\u2b50 {pick.rating}" if pick.rating else ""
-    parts = [f"\U0001f3af สุ่มได้ร้านนี้!\n"]
+    parts = [f"\U0001f3af Pick for you!\n"]
     parts.append(f"\U0001f35c {pick.name}")
     if distance or rating:
         parts.append(f"   {distance} {rating}".strip())
-    parts.append("\n\nไปร้านนี้มั้ย?")
+    parts.append("\n\nGo to this place?")
     return "\n".join(parts)
 
 
@@ -57,7 +57,7 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         candidates = result["candidates"]
         if not candidates:
             await update.message.reply_text(
-                "ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant"
+                "No restaurants found. Try adding one with /addrestaurant"
             )
             return
 
@@ -66,8 +66,8 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         text = _format_pick(pick)
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("\u2705 ไปเลย!", callback_data=f"gacha_ok:{pick.id}"),
-                InlineKeyboardButton("\U0001f504 สุ่มใหม่", callback_data="gacha_reroll"),
+                InlineKeyboardButton("\u2705 Confirm", callback_data=f"gacha_ok:{pick.id}"),
+                InlineKeyboardButton("\U0001f504 Reroll", callback_data="gacha_reroll"),
             ]
         ])
 
@@ -97,7 +97,7 @@ async def gacha_confirm_callback(
     try:
         user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, name)
         history_repo.log_lunch(db, restaurant_id, [user.id])
-        await query.edit_message_text("\u2705 บันทึกแล้ว! ไปกินให้อร่อยนะ \U0001f60b")
+        await query.edit_message_text("\u2705 Saved! Enjoy your meal \U0001f60b")
     except Exception:
         logger.exception("Error in gacha confirm callback")
         await query.edit_message_text("Something went wrong. Please try again.")
@@ -131,7 +131,7 @@ async def gacha_reroll_callback(
         candidates = result["candidates"]
         if not candidates:
             await query.edit_message_text(
-                "ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant"
+                "No restaurants found. Try adding one with /addrestaurant"
             )
             return
 
@@ -140,8 +140,8 @@ async def gacha_reroll_callback(
         text = _format_pick(pick)
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("\u2705 ไปเลย!", callback_data=f"gacha_ok:{pick.id}"),
-                InlineKeyboardButton("\U0001f504 สุ่มใหม่", callback_data="gacha_reroll"),
+                InlineKeyboardButton("\u2705 Confirm", callback_data=f"gacha_ok:{pick.id}"),
+                InlineKeyboardButton("\U0001f504 Reroll", callback_data="gacha_reroll"),
             ]
         ])
 
