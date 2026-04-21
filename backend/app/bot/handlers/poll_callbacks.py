@@ -7,6 +7,7 @@ from telegram.ext import ContextTypes
 from app.database import SessionLocal
 from app.models.poll import PollStatus
 from app.services import history_repo, poll_repo, restaurant_repo, user_repo
+from app.services.gacha import GachaLimitExceeded, SessionExpired, SessionNotFound, roll
 
 logger = logging.getLogger(__name__)
 
@@ -126,8 +127,6 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await query.answer("No gacha pool available.", show_alert=True)
             return
 
-        from app.services.gacha import GachaLimitExceeded, SessionExpired, SessionNotFound, roll
-
         try:
             result = roll(poll.session_id)
         except (SessionNotFound, SessionExpired):
@@ -140,6 +139,7 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         new_candidates = result["candidates"]
         new_candidate_ids = [r.id for r in new_candidates]
         poll.candidates = [str(cid) for cid in new_candidate_ids]
+        poll_repo.reset_votes(db, poll.id)
         db.commit()
 
         from app.bot.handlers.lunch import _build_poll_text, _build_poll_keyboard

@@ -22,8 +22,9 @@ backend/
 │   │   ├── poll_timeout.py       # Background poll expiry checker (complete + announce winner)
 │   │   ├── handlers/             # Command handlers
 │   │   │   ├── attendance.py      # /wfh and /in — attendance status commands
+│   │   │   ├── gacha_solo.py     # /gacha — solo random pick 1 restaurant, saves to history
 │   │   │   ├── lunch.py          # /lunch — recommend restaurants, create poll with inline keyboard
-│   │   │   ├── poll_callbacks.py # Callback handlers: vote, cancel, gacha button presses
+│   │   │   ├── poll_callbacks.py # Callback handlers: vote, cancel, gacha button presses (resets votes on gacha)
 │   │   │   ├── start.py          # /start — user registration + pairing token
 │   │   │   ├── help.py           # /help — list all commands
 │   │   │   └── unknown.py        # Unknown command fallback
@@ -71,6 +72,7 @@ backend/
 │       ├── test_recommendation.py # Recommendation pipeline tests (19 cases)
 │       ├── test_restaurants.py   # Restaurant CRUD + API tests (18 cases)
 │       ├── test_attendance.py    # Attendance repo + handlers + API tests (16 cases)
+│       ├── test_gacha_bot.py    # Gacha bot integration: vote reset, solo /gacha handler (7 cases)
 │       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (24 cases)
 │       └── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
 │

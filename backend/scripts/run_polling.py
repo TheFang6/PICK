@@ -18,6 +18,7 @@ load_dotenv()
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters  # noqa: E402
 
 from app.bot.handlers.attendance import in_handler, wfh_handler  # noqa: E402
+from app.bot.handlers.gacha_solo import gacha_handler  # noqa: E402
 from app.bot.handlers.help import help_handler  # noqa: E402
 from app.bot.handlers.lunch import lunch_handler  # noqa: E402
 from app.bot.handlers.poll_callbacks import cancel_callback, gacha_callback, vote_callback  # noqa: E402
@@ -39,6 +40,7 @@ async def main():
     app.add_handler(CommandHandler("wfh", wfh_handler))
     app.add_handler(CommandHandler("in", in_handler))
     app.add_handler(CommandHandler("lunch", lunch_handler))
+    app.add_handler(CommandHandler("gacha", gacha_handler))
     app.add_handler(CallbackQueryHandler(vote_callback, pattern=r"^vote:"))
     app.add_handler(CallbackQueryHandler(cancel_callback, pattern=r"^cancel:"))
     app.add_handler(CallbackQueryHandler(gacha_callback, pattern=r"^gacha:"))

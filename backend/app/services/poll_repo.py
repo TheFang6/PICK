@@ -124,6 +124,11 @@ def determine_winner(db: Session, poll: PollSession) -> uuid.UUID:
     return uuid.UUID(random.choice(top))
 
 
+def reset_votes(db: Session, poll_id: uuid.UUID) -> None:
+    db.query(PollVote).filter(PollVote.poll_session_id == poll_id).delete()
+    db.commit()
+
+
 def get_voter_ids(db: Session, poll_id: uuid.UUID) -> list[uuid.UUID]:
     votes = db.query(PollVote).filter(PollVote.poll_session_id == poll_id).all()
     return [v.user_id for v in votes]

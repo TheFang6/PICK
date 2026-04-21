@@ -26,7 +26,7 @@
 - [x] [008 — Telegram Bot Foundation](./008-telegram-bot-foundation.md)
 - [x] [009 — Attendance System](./009-attendance-system.md)
 - [x] [010 — Lunch & Poll Flow](./010-lunch-poll-flow.md)
-- [ ] [011 — Gacha Bot Integration](./011-gacha-bot-integration.md)
+- [x] [011 — Gacha Bot Integration](./011-gacha-bot-integration.md)
 - [ ] [012 — Blacklist Commands](./012-blacklist-commands.md)
 - [ ] [013 — Manual Restaurant Commands](./013-manual-restaurant-commands.md)
 
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 10
+- Done: 11
 - In Progress: 0
 - Blocked: 0
 
