@@ -1,5 +1,4 @@
 import logging
-import random
 import uuid
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -56,26 +55,35 @@ def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_vo
     return "\n".join(lines)
 
 
-def _format_solo_pick(pick) -> str:
-    distance = ""
-    if pick.lat and pick.lng:
-        from math import atan2, cos, radians, sin, sqrt
+def _build_dm_text(candidates: list) -> str:
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
 
-        R = 6371000
-        rlat1, rlat2 = radians(OFFICE_LAT), radians(pick.lat)
-        dlat = radians(pick.lat - OFFICE_LAT)
-        dlng = radians(pick.lng - OFFICE_LNG)
-        a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
-        d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
-        distance = f"{int(d)}m"
+    now = datetime.now(ZoneInfo("Asia/Bangkok"))
+    date_str = now.strftime("%d %b %Y")
 
-    rating = f"⭐ {pick.rating}" if pick.rating else ""
-    parts = [f"\U0001f3af Pick for you!\n"]
-    parts.append(f"\U0001f35c {pick.name}")
-    if distance or rating:
-        parts.append(f"   {distance} {rating}".strip())
-    parts.append("\n\nGo to this place?")
-    return "\n".join(parts)
+    lines = [
+        f"\U0001F37D Lunch today ({date_str})",
+        f"Pick one!\n",
+    ]
+
+    number_emojis = ["1️⃣", "2️⃣", "3️⃣"]
+    for i, r in enumerate(candidates):
+        emoji = number_emojis[i] if i < len(number_emojis) else f"{i+1}."
+        rating = f"⭐ {r.rating}" if r.rating else ""
+        lines.append(f"{emoji} {r.name} {rating}")
+
+    return "\n".join(lines)
+
+
+def _build_dm_keyboard(candidates: list) -> InlineKeyboardMarkup:
+    number_emojis = ["1️⃣", "2️⃣", "3️⃣"]
+    buttons = []
+    for i, r in enumerate(candidates):
+        emoji = number_emojis[i] if i < len(number_emojis) else f"{i+1}."
+        label = f"{emoji} {r.name}"
+        buttons.append([InlineKeyboardButton(label, callback_data=f"dm_pick:{r.id}")])
+    return InlineKeyboardMarkup(buttons)
 
 
 async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -102,14 +110,9 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 await update.message.reply_text("No restaurants found. Try adding one with /addrestaurant")
                 return
 
-            pick = random.choice(candidates[:5])
-            text = _format_solo_pick(pick)
-            keyboard = InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("✅ Confirm", callback_data=f"gacha_ok:{pick.id}"),
-                    InlineKeyboardButton("\U0001f504 Reroll", callback_data="gacha_reroll"),
-                ]
-            ])
+            picks = candidates[:3]
+            text = _build_dm_text(picks)
+            keyboard = _build_dm_keyboard(picks)
             await update.message.reply_text(text, reply_markup=keyboard)
             return
 
@@ -143,5 +146,35 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     except Exception:
         logger.exception("Error in /lunch handler")
         await update.message.reply_text("Something went wrong. Please try again.")
+    finally:
+        db.close()
+
+
+async def dm_pick_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not query or not query.data or not update.effective_user:
+        return
+
+    await query.answer()
+
+    restaurant_id = query.data.split(":")[1]
+    telegram_id = str(update.effective_user.id)
+    name = update.effective_user.full_name or "Unknown"
+
+    from app.services import history_repo, restaurant_repo
+
+    db = SessionLocal()
+    try:
+        user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, name)
+        restaurant = restaurant_repo.get_by_id(db, uuid.UUID(restaurant_id))
+        if not restaurant:
+            await query.edit_message_text("Restaurant not found.")
+            return
+
+        history_repo.log_lunch(db, restaurant.id, [user.id])
+        await query.edit_message_text(f"✅ {restaurant.name} — Enjoy your meal! \U0001F60B")
+    except Exception:
+        logger.exception("Error in dm_pick callback")
+        await query.edit_message_text("Something went wrong. Please try again.")
     finally:
         db.close()
