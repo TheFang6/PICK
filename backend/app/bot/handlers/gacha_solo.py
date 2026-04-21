@@ -1,6 +1,7 @@
 import logging
+import random
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from app.database import SessionLocal
@@ -11,6 +12,28 @@ logger = logging.getLogger(__name__)
 
 OFFICE_LAT = 13.756331
 OFFICE_LNG = 100.501762
+
+
+def _format_pick(pick):
+    distance = ""
+    if pick.lat and pick.lng:
+        from math import atan2, cos, radians, sin, sqrt
+
+        R = 6371000
+        rlat1, rlat2 = radians(OFFICE_LAT), radians(pick.lat)
+        dlat = radians(pick.lat - OFFICE_LAT)
+        dlng = radians(pick.lng - OFFICE_LNG)
+        a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
+        d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
+        distance = f"{int(d)}m"
+
+    rating = f"\u2b50 {pick.rating}" if pick.rating else ""
+    parts = [f"\U0001f3af สุ่มได้ร้านนี้!\n"]
+    parts.append(f"\U0001f35c {pick.name}")
+    if distance or rating:
+        parts.append(f"   {distance} {rating}".strip())
+    parts.append("\n\nไปร้านนี้มั้ย?")
+    return "\n".join(parts)
 
 
 async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -33,34 +56,99 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         candidates = result["candidates"]
         if not candidates:
-            await update.message.reply_text("ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant")
+            await update.message.reply_text(
+                "ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant"
+            )
             return
 
-        pick = candidates[0]
+        pick = random.choice(candidates[:5])
 
-        history_repo.log_lunch(db, pick.id, [user.id])
+        text = _format_pick(pick)
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("\u2705 ไปเลย!", callback_data=f"gacha_ok:{pick.id}"),
+                InlineKeyboardButton("\U0001f504 สุ่มใหม่", callback_data="gacha_reroll"),
+            ]
+        ])
 
-        distance = ""
-        if pick.lat and pick.lng:
-            from math import radians, sin, cos, sqrt, atan2
-            R = 6371000
-            rlat1, rlat2 = radians(OFFICE_LAT), radians(pick.lat)
-            dlat = radians(pick.lat - OFFICE_LAT)
-            dlng = radians(pick.lng - OFFICE_LNG)
-            a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
-            d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
-            distance = f"{int(d)}m"
-
-        rating = f"\u2B50 {pick.rating}" if pick.rating else ""
-        parts = [f"\U0001F3AF วันนี้ไปร้านนี้เลยนะ\n"]
-        parts.append(f"\U0001F35C {pick.name}")
-        if distance or rating:
-            parts.append(f"   {distance} {rating}".strip())
-
-        await update.message.reply_text("\n".join(parts))
+        await update.message.reply_text(text, reply_markup=keyboard)
 
     except Exception:
         logger.exception("Error in /gacha handler")
         await update.message.reply_text("Something went wrong. Please try again.")
+    finally:
+        db.close()
+
+
+async def gacha_confirm_callback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+    if not query or not query.data or not update.effective_user:
+        return
+
+    await query.answer()
+
+    restaurant_id = query.data.split(":")[1]
+    telegram_id = str(update.effective_user.id)
+    name = update.effective_user.full_name or "Unknown"
+
+    db = SessionLocal()
+    try:
+        user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, name)
+        history_repo.log_lunch(db, restaurant_id, [user.id])
+        await query.edit_message_text("\u2705 บันทึกแล้ว! ไปกินให้อร่อยนะ \U0001f60b")
+    except Exception:
+        logger.exception("Error in gacha confirm callback")
+        await query.edit_message_text("Something went wrong. Please try again.")
+    finally:
+        db.close()
+
+
+async def gacha_reroll_callback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    query = update.callback_query
+    if not query or not update.effective_user:
+        return
+
+    await query.answer()
+
+    telegram_id = str(update.effective_user.id)
+    name = update.effective_user.full_name or "Unknown"
+
+    db = SessionLocal()
+    try:
+        user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, name)
+
+        result = await recommend(
+            db=db,
+            user_ids=[user.id],
+            office_lat=OFFICE_LAT,
+            office_lng=OFFICE_LNG,
+        )
+
+        candidates = result["candidates"]
+        if not candidates:
+            await query.edit_message_text(
+                "ไม่เจอร้านอาหารเลย ลองเพิ่มร้านด้วย /addrestaurant"
+            )
+            return
+
+        pick = random.choice(candidates[:5])
+
+        text = _format_pick(pick)
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("\u2705 ไปเลย!", callback_data=f"gacha_ok:{pick.id}"),
+                InlineKeyboardButton("\U0001f504 สุ่มใหม่", callback_data="gacha_reroll"),
+            ]
+        ])
+
+        await query.edit_message_text(text, reply_markup=keyboard)
+
+    except Exception:
+        logger.exception("Error in gacha reroll callback")
+        await query.edit_message_text("Something went wrong. Please try again.")
     finally:
         db.close()
