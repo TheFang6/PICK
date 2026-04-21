@@ -1,7 +1,9 @@
 import logging
+import random
 import uuid
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ChatType
 from telegram.ext import ContextTypes
 
 from app.config import settings
@@ -54,16 +56,63 @@ def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_vo
     return "\n".join(lines)
 
 
+def _format_solo_pick(pick) -> str:
+    distance = ""
+    if pick.lat and pick.lng:
+        from math import atan2, cos, radians, sin, sqrt
+
+        R = 6371000
+        rlat1, rlat2 = radians(OFFICE_LAT), radians(pick.lat)
+        dlat = radians(pick.lat - OFFICE_LAT)
+        dlng = radians(pick.lng - OFFICE_LNG)
+        a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
+        d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
+        distance = f"{int(d)}m"
+
+    rating = f"⭐ {pick.rating}" if pick.rating else ""
+    parts = [f"\U0001f3af Pick for you!\n"]
+    parts.append(f"\U0001f35c {pick.name}")
+    if distance or rating:
+        parts.append(f"   {distance} {rating}".strip())
+    parts.append("\n\nGo to this place?")
+    return "\n".join(parts)
+
+
 async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.effective_user or not update.message:
         return
 
     telegram_id = str(update.effective_user.id)
     name = update.effective_user.full_name or "Unknown"
+    is_dm = update.effective_chat.type == ChatType.PRIVATE
 
     db = SessionLocal()
     try:
         user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, name)
+
+        if is_dm:
+            result = await recommend(
+                db=db,
+                user_ids=[user.id],
+                office_lat=OFFICE_LAT,
+                office_lng=OFFICE_LNG,
+            )
+            candidates = result["candidates"]
+            if not candidates:
+                await update.message.reply_text("No restaurants found. Try adding one with /addrestaurant")
+                return
+
+            pick = random.choice(candidates[:5])
+            text = _format_solo_pick(pick)
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("✅ Confirm", callback_data=f"gacha_ok:{pick.id}"),
+                    InlineKeyboardButton("\U0001f504 Reroll", callback_data="gacha_reroll"),
+                ]
+            ])
+            await update.message.reply_text(text, reply_markup=keyboard)
+            return
+
         attendees = attendance_repo.get_attendees(db)
         attendee_ids = [u.id for u in attendees]
 
@@ -83,14 +132,6 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         if not candidates:
             await update.message.reply_text("No restaurants found nearby. Try adding some manually with /addrestaurant")
-            return
-
-        if len(attendee_ids) == 1:
-            poll = poll_repo.create_poll(db, str(update.effective_chat.id), [r.id for r in candidates], session_id, user.id)
-            text = _build_poll_text(candidates, total_attendees=1)
-            keyboard = _build_poll_keyboard(poll.id, candidates)
-            msg = await update.message.reply_text(text, reply_markup=keyboard)
-            poll_repo.set_message_id(db, poll.id, msg.message_id)
             return
 
         poll = poll_repo.create_poll(db, str(update.effective_chat.id), [r.id for r in candidates], session_id, user.id)
