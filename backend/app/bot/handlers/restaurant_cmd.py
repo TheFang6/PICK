@@ -19,7 +19,7 @@ from app.services import restaurant_repo, user_repo
 
 logger = logging.getLogger(__name__)
 
-DAY_NAMES = ["จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์", "อาทิตย์"]
+DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 class AddState(IntEnum):
@@ -43,18 +43,18 @@ async def add_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     context.user_data["add_restaurant"] = {}
-    await update.message.reply_text("ชื่อร้านอะไรครับ?")
+    await update.message.reply_text("What's the restaurant name?")
     return AddState.NAME
 
 
 async def add_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     name = update.message.text.strip()
     if not name or len(name) > 100:
-        await update.message.reply_text("ชื่อร้านต้องไม่เกิน 100 ตัวอักษร ลองใหม่")
+        await update.message.reply_text("Name must be under 100 characters. Try again")
         return AddState.NAME
 
     context.user_data["add_restaurant"]["name"] = name
-    await update.message.reply_text("ราคาต่อจานประมาณเท่าไหร่? (พิมพ์ตัวเลข หรือ /skip)")
+    await update.message.reply_text("Approx. price per dish? (number or /skip)")
     return AddState.PRICE
 
 
@@ -69,10 +69,10 @@ async def add_price(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                 raise ValueError
             context.user_data["add_restaurant"]["price"] = price
         except ValueError:
-            await update.message.reply_text("กรุณาใส่ตัวเลขที่มากกว่า 0 หรือ /skip")
+            await update.message.reply_text("Please enter a number > 0 or /skip")
             return AddState.PRICE
 
-    await update.message.reply_text("ประเภทร้าน? (เช่น ก๋วยเตี๋ยว, ข้าวแกง, อื่นๆ) หรือ /skip")
+    await update.message.reply_text("Restaurant type? (e.g. noodles, rice, etc.) or /skip")
     return AddState.CATEGORY
 
 
@@ -85,7 +85,7 @@ async def add_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     context.user_data["add_restaurant"]["closed_days"] = []
     keyboard = _build_closed_days_keyboard([])
-    await update.message.reply_text("ร้านนี้ปิดวันไหนบ้าง? (กดเลือก แล้วกด 💾 Save) หรือ /skip", reply_markup=keyboard)
+    await update.message.reply_text("Which days is it closed? (select then 💾 Save) or /skip", reply_markup=keyboard)
     return AddState.CLOSED_DAYS
 
 
@@ -117,8 +117,8 @@ async def add_closed_days_skip(update: Update, context: ContextTypes.DEFAULT_TYP
     text = _format_confirm_text(data)
     keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ ยืนยัน", callback_data="add_confirm:yes"),
-            InlineKeyboardButton("❌ ยกเลิก", callback_data="add_confirm:no"),
+            InlineKeyboardButton("✅ Confirm", callback_data="add_confirm:yes"),
+            InlineKeyboardButton("❌ Cancel", callback_data="add_confirm:no"),
         ]
     ])
     await update.message.reply_text(text, reply_markup=keyboard)
@@ -130,8 +130,8 @@ async def _show_confirm(query, context) -> int:
     text = _format_confirm_text(data)
     keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ ยืนยัน", callback_data="add_confirm:yes"),
-            InlineKeyboardButton("❌ ยกเลิก", callback_data="add_confirm:no"),
+            InlineKeyboardButton("✅ Confirm", callback_data="add_confirm:yes"),
+            InlineKeyboardButton("❌ Cancel", callback_data="add_confirm:no"),
         ]
     ])
     await query.edit_message_text(text, reply_markup=keyboard)
@@ -143,7 +143,7 @@ async def add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     await query.answer()
 
     if query.data == "add_confirm:no":
-        await query.edit_message_text("ยกเลิกแล้ว")
+        await query.edit_message_text("Cancelled")
         return ConversationHandler.END
 
     telegram_id = str(query.from_user.id)
@@ -174,10 +174,10 @@ async def add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         )
         restaurant_repo.create_manual(db, create_data, user.id)
 
-        await query.edit_message_text(f"เพิ่มร้าน \"{data['name']}\" เรียบร้อยแล้ว ✅")
+        await query.edit_message_text(f"Added \"{data['name']}\" successfully ✅")
     except Exception:
         logger.exception("Error saving restaurant")
-        await query.edit_message_text("เกิดข้อผิดพลาด ลองใหม่อีกครั้ง")
+        await query.edit_message_text("Something went wrong. Please try again")
     finally:
         db.close()
 
@@ -197,7 +197,7 @@ async def edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         my_restaurants = [r for r in all_restaurants if r.added_by == user.id]
 
         if not my_restaurants:
-            await update.message.reply_text("คุณยังไม่มีร้านที่เพิ่มเอง ลอง /addrestaurant ก่อน")
+            await update.message.reply_text("You haven't added any restaurants yet. Try /addrestaurant first")
             return ConversationHandler.END
 
         context.user_data["my_restaurants"] = {str(r.id): r.name for r in my_restaurants[:10]}
@@ -205,13 +205,13 @@ async def edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         buttons = []
         for i, r in enumerate(my_restaurants[:10]):
             buttons.append([InlineKeyboardButton(f"{i+1}. {r.name}", callback_data=f"edit_pick:{r.id}")])
-        buttons.append([InlineKeyboardButton("❌ ยกเลิก", callback_data="edit_pick:cancel")])
+        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="edit_pick:cancel")])
 
-        await update.message.reply_text("เลือกร้านที่ต้องการแก้ไข:", reply_markup=InlineKeyboardMarkup(buttons))
+        await update.message.reply_text("Select a restaurant to edit:", reply_markup=InlineKeyboardMarkup(buttons))
         return EditState.SELECT_RESTAURANT
     except Exception:
         logger.exception("Error in edit start")
-        await update.message.reply_text("เกิดข้อผิดพลาด ลองใหม่")
+        await update.message.reply_text("Something went wrong. Try again")
         return ConversationHandler.END
     finally:
         db.close()
@@ -223,7 +223,7 @@ async def edit_select_restaurant(update: Update, context: ContextTypes.DEFAULT_T
 
     data = query.data
     if data == "edit_pick:cancel":
-        await query.edit_message_text("ยกเลิกแล้ว")
+        await query.edit_message_text("Cancelled")
         return ConversationHandler.END
 
     restaurant_id = data.split(":")[1]
@@ -233,7 +233,7 @@ async def edit_select_restaurant(update: Update, context: ContextTypes.DEFAULT_T
     try:
         r = restaurant_repo.get_by_id(db, uuid.UUID(restaurant_id))
         if not r:
-            await query.edit_message_text("ไม่เจอร้านนี้แล้ว")
+            await query.edit_message_text("Restaurant not found")
             return ConversationHandler.END
 
         text = _format_restaurant_details(r)
@@ -242,7 +242,7 @@ async def edit_select_restaurant(update: Update, context: ContextTypes.DEFAULT_T
         return EditState.SELECT_FIELD
     except Exception:
         logger.exception("Error selecting restaurant")
-        await query.edit_message_text("เกิดข้อผิดพลาด")
+        await query.edit_message_text("Something went wrong")
         return ConversationHandler.END
     finally:
         db.close()
@@ -254,17 +254,17 @@ async def edit_select_field(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     data = query.data
     if data == "edit_field:close":
-        await query.edit_message_text("ปิดแล้ว")
+        await query.edit_message_text("Closed")
         return ConversationHandler.END
 
     if data == "edit_field:delete":
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ ลบเลย", callback_data="edit_delete:yes"),
-                InlineKeyboardButton("❌ ไม่ลบ", callback_data="edit_delete:no"),
+                InlineKeyboardButton("✅ Delete", callback_data="edit_delete:yes"),
+                InlineKeyboardButton("❌ Keep", callback_data="edit_delete:no"),
             ]
         ])
-        await query.edit_message_text("คุณแน่ใจที่จะลบร้านนี้?", reply_markup=keyboard)
+        await query.edit_message_text("Are you sure you want to delete this restaurant?", reply_markup=keyboard)
         return EditState.DELETE_CONFIRM
 
     if data == "edit_field:closed_days":
@@ -275,7 +275,7 @@ async def edit_select_field(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             current_days = r.closed_weekdays or [] if r else []
             context.user_data["edit_closed_days"] = list(current_days)
             keyboard = _build_edit_closed_days_keyboard(current_days)
-            await query.edit_message_text("เลือกวันที่ร้านปิด:", reply_markup=keyboard)
+            await query.edit_message_text("Select closed days:", reply_markup=keyboard)
             return EditState.EDIT_CLOSED_DAYS
         finally:
             db.close()
@@ -284,11 +284,11 @@ async def edit_select_field(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     context.user_data["editing_field"] = field
 
     prompts = {
-        "name": "พิมพ์ชื่อร้านใหม่:",
-        "price": "พิมพ์ราคาต่อจานใหม่ (ตัวเลข):",
-        "category": "พิมพ์ประเภทร้านใหม่:",
+        "name": "Enter new name:",
+        "price": "Enter new price (number):",
+        "category": "Enter new category:",
     }
-    await query.edit_message_text(prompts.get(field, "พิมพ์ค่าใหม่:"))
+    await query.edit_message_text(prompts.get(field, "Enter new value:"))
     return EditState.EDIT_VALUE
 
 
@@ -301,12 +301,12 @@ async def edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         r = restaurant_repo.get_by_id(db, uuid.UUID(restaurant_id))
         if not r:
-            await update.message.reply_text("ไม่เจอร้านนี้แล้ว")
+            await update.message.reply_text("Restaurant not found")
             return ConversationHandler.END
 
         if field == "name":
             if not text or len(text) > 100:
-                await update.message.reply_text("ชื่อต้องไม่เกิน 100 ตัวอักษร")
+                await update.message.reply_text("Name must be under 100 characters")
                 return EditState.EDIT_VALUE
             r.name = text
         elif field == "price":
@@ -323,7 +323,7 @@ async def edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                 else:
                     r.price_level = 4
             except ValueError:
-                await update.message.reply_text("กรุณาใส่ตัวเลขที่มากกว่า 0")
+                await update.message.reply_text("Please enter a number > 0")
                 return EditState.EDIT_VALUE
         elif field == "category":
             r.types = [text]
@@ -332,11 +332,11 @@ async def edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
         details = _format_restaurant_details(r)
         keyboard = _build_edit_menu_keyboard(restaurant_id)
-        await update.message.reply_text(f"อัพเดทแล้ว ✅\n\n{details}", reply_markup=keyboard)
+        await update.message.reply_text(f"Updated ✅\n\n{details}", reply_markup=keyboard)
         return EditState.SELECT_FIELD
     except Exception:
         logger.exception("Error editing restaurant")
-        await update.message.reply_text("เกิดข้อผิดพลาด")
+        await update.message.reply_text("Something went wrong")
         return ConversationHandler.END
     finally:
         db.close()
@@ -360,7 +360,7 @@ async def edit_closed_days_toggle(update: Update, context: ContextTypes.DEFAULT_
 
                 details = _format_restaurant_details(r)
                 keyboard = _build_edit_menu_keyboard(restaurant_id)
-                await query.edit_message_text(f"อัพเดทวันปิดแล้ว ✅\n\n{details}", reply_markup=keyboard)
+                await query.edit_message_text(f"Updated closed days ✅\n\n{details}", reply_markup=keyboard)
         finally:
             db.close()
         return EditState.SELECT_FIELD
@@ -395,7 +395,7 @@ async def edit_delete_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE
                 return EditState.SELECT_FIELD
         finally:
             db.close()
-        await query.edit_message_text("ยกเลิกแล้ว")
+        await query.edit_message_text("Cancelled")
         return ConversationHandler.END
 
     restaurant_id = context.user_data["editing_restaurant_id"]
@@ -403,12 +403,12 @@ async def edit_delete_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         deleted = restaurant_repo.delete(db, uuid.UUID(restaurant_id))
         if deleted:
-            await query.edit_message_text("ลบร้านเรียบร้อยแล้ว 🗑️")
+            await query.edit_message_text("Restaurant deleted 🗑️")
         else:
-            await query.edit_message_text("ไม่เจอร้านนี้แล้ว")
+            await query.edit_message_text("Restaurant not found")
     except Exception:
         logger.exception("Error deleting restaurant")
-        await query.edit_message_text("เกิดข้อผิดพลาด")
+        await query.edit_message_text("Something went wrong")
     finally:
         db.close()
 
@@ -416,7 +416,7 @@ async def edit_delete_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("ยกเลิกแล้ว")
+    await update.message.reply_text("Cancelled")
     return ConversationHandler.END
 
 
@@ -449,15 +449,15 @@ def _build_edit_closed_days_keyboard(selected: list[int]) -> InlineKeyboardMarku
 def _build_edit_menu_keyboard(restaurant_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✏️ ชื่อ", callback_data="edit_field:name"),
-            InlineKeyboardButton("💰 ราคา", callback_data="edit_field:price"),
-            InlineKeyboardButton("🍜 ประเภท", callback_data="edit_field:category"),
+            InlineKeyboardButton("✏️ Name", callback_data="edit_field:name"),
+            InlineKeyboardButton("💰 Price", callback_data="edit_field:price"),
+            InlineKeyboardButton("🍜 Type", callback_data="edit_field:category"),
         ],
         [
-            InlineKeyboardButton("📅 วันปิด", callback_data="edit_field:closed_days"),
-            InlineKeyboardButton("🗑️ ลบร้าน", callback_data="edit_field:delete"),
+            InlineKeyboardButton("📅 Closed", callback_data="edit_field:closed_days"),
+            InlineKeyboardButton("🗑️ Delete", callback_data="edit_field:delete"),
         ],
-        [InlineKeyboardButton("❌ ปิด", callback_data="edit_field:close")],
+        [InlineKeyboardButton("❌ Close", callback_data="edit_field:close")],
     ])
 
 
@@ -465,25 +465,25 @@ def _format_restaurant_details(r) -> str:
     lines = [f"🍽️ {r.name}"]
     if r.price_level:
         price_text = {1: "≤50฿", 2: "51-100฿", 3: "101-200฿", 4: ">200฿"}.get(r.price_level, "?")
-        lines.append(f"💰 ราคา: {price_text}")
+        lines.append(f"💰 Price: {price_text}")
     if r.types:
-        lines.append(f"🍜 ประเภท: {', '.join(r.types)}")
+        lines.append(f"🍜 Type: {', '.join(r.types)}")
     if r.closed_weekdays:
         days = [DAY_NAMES[d] for d in r.closed_weekdays if d < len(DAY_NAMES)]
-        lines.append(f"📅 วันปิด: {', '.join(days)}")
+        lines.append(f"📅 Closed: {', '.join(days)}")
     return "\n".join(lines)
 
 
 def _format_confirm_text(data: dict) -> str:
-    lines = ["ยืนยันเพิ่มร้าน?\n"]
-    lines.append(f"📍 ชื่อ: {data['name']}")
+    lines = ["Confirm add restaurant?\n"]
+    lines.append(f"📍 Name: {data['name']}")
     if data.get("price"):
-        lines.append(f"💰 ราคา: ~{data['price']}฿")
+        lines.append(f"💰 Price: ~{data['price']}฿")
     if data.get("category"):
-        lines.append(f"🍜 ประเภท: {data['category']}")
+        lines.append(f"🍜 Type: {data['category']}")
     if data.get("closed_days"):
         days = [DAY_NAMES[d] for d in data["closed_days"] if d < len(DAY_NAMES)]
-        lines.append(f"📅 วันปิด: {', '.join(days)}")
+        lines.append(f"📅 Closed: {', '.join(days)}")
     return "\n".join(lines)
 
 

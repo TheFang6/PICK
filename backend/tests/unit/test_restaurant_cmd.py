@@ -146,7 +146,7 @@ class TestAddRestaurant:
 
         result = await add_confirm(mock_update, mock_context)
         assert result == -1  # ConversationHandler.END
-        query.edit_message_text.assert_called_with("ยกเลิกแล้ว")
+        query.edit_message_text.assert_called_with("Cancelled")
 
 
 class TestEditRestaurant:
@@ -183,7 +183,7 @@ class TestEditRestaurant:
             result = await edit_start(mock_update, mock_context)
             assert result == -1  # ConversationHandler.END
             call_text = mock_update.message.reply_text.call_args[0][0]
-            assert "ยังไม่มีร้าน" in call_text
+            assert "haven't added" in call_text
 
     @pytest.mark.asyncio
     async def test_edit_start_with_restaurants(self, mock_update, mock_context):
@@ -247,7 +247,7 @@ class TestEditRestaurant:
 
         result = await edit_select_restaurant(mock_update, mock_context)
         assert result == -1
-        query.edit_message_text.assert_called_with("ยกเลิกแล้ว")
+        query.edit_message_text.assert_called_with("Cancelled")
 
     @pytest.mark.asyncio
     async def test_edit_value_name(self, mock_update, mock_context):
@@ -298,7 +298,7 @@ class TestEditRestaurant:
             assert result == -1
             mock_rest_repo.delete.assert_called_once()
             call_text = query.edit_message_text.call_args[0][0]
-            assert "ลบ" in call_text
+            assert "deleted" in call_text
 
     @pytest.mark.asyncio
     async def test_edit_delete_confirm_no(self, mock_update, mock_context):
@@ -338,4 +338,4 @@ class TestCancel:
 
         result = await cancel(update, context)
         assert result == -1
-        update.message.reply_text.assert_called_with("ยกเลิกแล้ว")
+        update.message.reply_text.assert_called_with("Cancelled")

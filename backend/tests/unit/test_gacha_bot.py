@@ -70,14 +70,13 @@ class TestResetVotes:
         assert get_total_votes(db, poll.id) == 0
 
 
-class TestGachaCallbackVoteReset:
+class TestGachaCallbackPickOne:
     @pytest.mark.asyncio
-    async def test_gacha_resets_votes(self):
+    async def test_gacha_picks_one_and_completes_poll(self):
         poll_id = uuid.uuid4()
+        r1_id = uuid.uuid4()
         query = AsyncMock()
         query.data = f"gacha:{poll_id}"
-        query.from_user = MagicMock()
-        query.from_user.id = 12345
         query.answer = AsyncMock()
         query.edit_message_text = AsyncMock()
 
@@ -85,24 +84,18 @@ class TestGachaCallbackVoteReset:
         update.callback_query = query
         context = MagicMock()
 
-        r1 = MagicMock()
-        r1.id = uuid.uuid4()
-        r1.name = "New R1"
-        r1.rating = 4.0
-        r2 = MagicMock()
-        r2.id = uuid.uuid4()
-        r2.name = "New R2"
-        r2.rating = 3.5
-        r3 = MagicMock()
-        r3.id = uuid.uuid4()
-        r3.name = "New R3"
-        r3.rating = 4.2
+        mock_restaurant = MagicMock()
+        mock_restaurant.id = r1_id
+        mock_restaurant.name = "Test Restaurant"
+        mock_restaurant.rating = 4.5
+        mock_restaurant.lat = None
+        mock_restaurant.lng = None
 
         with (
             patch("app.bot.handlers.poll_callbacks.SessionLocal") as mock_session_cls,
             patch("app.bot.handlers.poll_callbacks.poll_repo") as mock_poll_repo,
-            patch("app.bot.handlers.poll_callbacks.user_repo"),
-            patch("app.bot.handlers.poll_callbacks.restaurant_repo"),
+            patch("app.bot.handlers.poll_callbacks.restaurant_repo") as mock_rest_repo,
+            patch("app.bot.handlers.poll_callbacks.history_repo") as mock_hist_repo,
         ):
             mock_db = MagicMock()
             mock_session_cls.return_value = mock_db
@@ -110,25 +103,23 @@ class TestGachaCallbackVoteReset:
             mock_poll = MagicMock()
             mock_poll.id = poll_id
             mock_poll.status = PollStatus.ACTIVE
-            mock_poll.session_id = "sess1"
-            mock_poll.candidates = [str(uuid.uuid4())]
+            mock_poll.candidates = [str(r1_id)]
             mock_poll_repo.get_poll.return_value = mock_poll
+            mock_poll_repo.get_voter_ids.return_value = [uuid.uuid4()]
+            mock_rest_repo.get_by_id.return_value = mock_restaurant
 
-            with patch("app.bot.handlers.poll_callbacks.roll") as mock_roll:
-                mock_roll.return_value = {
-                    "candidates": [r1, r2, r3],
-                    "remaining_rolls": 4,
-                    "gacha_count": 1,
-                }
+            from app.bot.handlers.poll_callbacks import gacha_callback
 
-                from app.bot.handlers.poll_callbacks import gacha_callback
+            await gacha_callback(update, context)
 
-                await gacha_callback(update, context)
-
-                mock_poll_repo.reset_votes.assert_called_once_with(mock_db, poll_id)
+            mock_poll_repo.complete_poll.assert_called_once_with(mock_db, poll_id, r1_id)
+            mock_hist_repo.log_lunch.assert_called_once()
+            call_text = query.edit_message_text.call_args[0][0]
+            assert "Gacha picked" in call_text
+            assert "Test Restaurant" in call_text
 
     @pytest.mark.asyncio
-    async def test_gacha_limit_exceeded(self):
+    async def test_gacha_poll_ended(self):
         poll_id = uuid.uuid4()
         query = AsyncMock()
         query.data = f"gacha:{poll_id}"
@@ -146,19 +137,14 @@ class TestGachaCallbackVoteReset:
             mock_session_cls.return_value = mock_db
 
             mock_poll = MagicMock()
-            mock_poll.id = poll_id
-            mock_poll.status = PollStatus.ACTIVE
-            mock_poll.session_id = "sess1"
+            mock_poll.status = PollStatus.COMPLETED
             mock_poll_repo.get_poll.return_value = mock_poll
 
-            from app.services.gacha import GachaLimitExceeded
+            from app.bot.handlers.poll_callbacks import gacha_callback
 
-            with patch("app.bot.handlers.poll_callbacks.roll", side_effect=GachaLimitExceeded()):
-                from app.bot.handlers.poll_callbacks import gacha_callback
+            await gacha_callback(update, context)
 
-                await gacha_callback(update, context)
-
-                query.answer.assert_called_with("Max gacha rolls reached (5).", show_alert=True)
+            query.answer.assert_called_with("This poll has ended.", show_alert=True)
 
 
 class TestGachaSoloHandler:
@@ -177,7 +163,7 @@ class TestGachaSoloHandler:
         return MagicMock()
 
     @pytest.mark.asyncio
-    async def test_gacha_solo_success(self, mock_update, mock_context):
+    async def test_gacha_solo_shows_confirm_buttons(self, mock_update, mock_context):
         with (
             patch("app.bot.handlers.gacha_solo.SessionLocal") as mock_session_cls,
             patch("app.bot.handlers.gacha_solo.user_repo") as mock_user_repo,
@@ -209,10 +195,15 @@ class TestGachaSoloHandler:
 
             await gacha_handler(mock_update, mock_context)
 
-            mock_hist_repo.log_lunch.assert_called_once_with(mock_db, mock_restaurant.id, [mock_user.id])
-            call_args = mock_update.message.reply_text.call_args[0][0]
-            assert "ส้มตำนัว" in call_args
-            assert "วันนี้ไปร้านนี้เลยนะ" in call_args
+            mock_hist_repo.log_lunch.assert_not_called()
+            call_args = mock_update.message.reply_text.call_args
+            text = call_args[0][0]
+            assert "ส้มตำนัว" in text
+            assert "Pick for you" in text
+            reply_markup = call_args[1]["reply_markup"]
+            buttons = reply_markup.inline_keyboard[0]
+            assert "gacha_ok:" in buttons[0].callback_data
+            assert "gacha_reroll" in buttons[1].callback_data
 
     @pytest.mark.asyncio
     async def test_gacha_solo_no_restaurants(self, mock_update, mock_context):
@@ -240,7 +231,7 @@ class TestGachaSoloHandler:
             await gacha_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args[0][0]
-            assert "ไม่เจอร้านอาหาร" in call_args
+            assert "No restaurants found" in call_args
 
     @pytest.mark.asyncio
     async def test_gacha_solo_error(self, mock_update, mock_context):
@@ -258,3 +249,138 @@ class TestGachaSoloHandler:
 
             call_args = mock_update.message.reply_text.call_args[0][0]
             assert "Something went wrong" in call_args
+
+
+class TestGachaConfirmCallback:
+    @pytest.mark.asyncio
+    async def test_confirm_saves_history(self):
+        restaurant_id = uuid.uuid4()
+        query = AsyncMock()
+        query.data = f"gacha_ok:{restaurant_id}"
+        query.answer = AsyncMock()
+        query.edit_message_text = AsyncMock()
+
+        update = MagicMock()
+        update.callback_query = query
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.gacha_solo.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.gacha_solo.user_repo") as mock_user_repo,
+            patch("app.bot.handlers.gacha_solo.history_repo") as mock_hist_repo,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            from app.bot.handlers.gacha_solo import gacha_confirm_callback
+
+            await gacha_confirm_callback(update, context)
+
+            mock_hist_repo.log_lunch.assert_called_once_with(
+                mock_db, str(restaurant_id), [mock_user.id]
+            )
+            query.edit_message_text.assert_called_once()
+            assert "Saved" in query.edit_message_text.call_args[0][0]
+
+
+class TestGachaRerollCallback:
+    @pytest.mark.asyncio
+    async def test_reroll_shows_new_pick(self):
+        query = AsyncMock()
+        query.data = "gacha_reroll"
+        query.answer = AsyncMock()
+        query.edit_message_text = AsyncMock()
+
+        update = MagicMock()
+        update.callback_query = query
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.gacha_solo.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.gacha_solo.user_repo") as mock_user_repo,
+            patch("app.bot.handlers.gacha_solo.recommend") as mock_recommend,
+            patch("app.bot.handlers.gacha_solo.random") as mock_random,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            mock_restaurant = MagicMock()
+            mock_restaurant.id = uuid.uuid4()
+            mock_restaurant.name = "ร้านใหม่"
+            mock_restaurant.rating = 4.0
+            mock_restaurant.lat = 13.757
+            mock_restaurant.lng = 100.502
+
+            mock_recommend.return_value = {
+                "candidates": [mock_restaurant],
+                "session_id": "sess1",
+                "pool": [],
+                "remaining_rolls": 5,
+            }
+            mock_random.choice.return_value = mock_restaurant
+
+            from app.bot.handlers.gacha_solo import gacha_reroll_callback
+
+            await gacha_reroll_callback(update, context)
+
+            call_args = query.edit_message_text.call_args
+            text = call_args[0][0]
+            assert "ร้านใหม่" in text
+            reply_markup = call_args[1]["reply_markup"]
+            buttons = reply_markup.inline_keyboard[0]
+            assert "gacha_ok:" in buttons[0].callback_data
+            assert "gacha_reroll" in buttons[1].callback_data
+
+    @pytest.mark.asyncio
+    async def test_reroll_no_restaurants(self):
+        query = AsyncMock()
+        query.data = "gacha_reroll"
+        query.answer = AsyncMock()
+        query.edit_message_text = AsyncMock()
+
+        update = MagicMock()
+        update.callback_query = query
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.gacha_solo.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.gacha_solo.user_repo") as mock_user_repo,
+            patch("app.bot.handlers.gacha_solo.recommend") as mock_recommend,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            mock_recommend.return_value = {
+                "candidates": [],
+                "session_id": "sess1",
+                "pool": [],
+                "remaining_rolls": 5,
+            }
+
+            from app.bot.handlers.gacha_solo import gacha_reroll_callback
+
+            await gacha_reroll_callback(update, context)
+
+            call_args = query.edit_message_text.call_args[0][0]
+            assert "No restaurants found" in call_args

@@ -45,7 +45,7 @@ class TestBlacklistHandler:
         await blacklist_handler(mock_update, mock_context)
 
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "กรุณาระบุชื่อร้าน" in call_args
+        assert "Please specify a restaurant name" in call_args
 
     @pytest.mark.asyncio
     async def test_add_not_found(self, mock_update, mock_context):
@@ -64,7 +64,7 @@ class TestBlacklistHandler:
             await blacklist_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args[0][0]
-            assert "ไม่เจอร้าน" in call_args
+            assert "not found" in call_args
 
     @pytest.mark.asyncio
     async def test_add_single_match_shows_mode_keyboard(self, mock_update, mock_context):
@@ -114,7 +114,7 @@ class TestBlacklistHandler:
             await blacklist_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args
-            assert "2 ร้าน" in call_args[0][0]
+            assert "Found 2 restaurants" in call_args[0][0]
 
     @pytest.mark.asyncio
     async def test_list_empty(self, mock_update, mock_context):
@@ -176,8 +176,8 @@ class TestBlacklistHandler:
             call_args = mock_update.message.reply_text.call_args[0][0]
             assert "ร้านPermanent" in call_args
             assert "ร้านToday" in call_args
-            assert "ถาวร" in call_args
-            assert "แค่วันนี้" in call_args
+            assert "Permanent" in call_args
+            assert "Today only" in call_args
 
     @pytest.mark.asyncio
     async def test_remove_no_name(self, mock_update, mock_context):
@@ -188,7 +188,7 @@ class TestBlacklistHandler:
         await blacklist_handler(mock_update, mock_context)
 
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "กรุณาระบุชื่อร้าน" in call_args
+        assert "Please specify a restaurant name" in call_args
 
     @pytest.mark.asyncio
     async def test_remove_success(self, mock_update, mock_context):
@@ -223,7 +223,7 @@ class TestBlacklistHandler:
             mock_bl_repo.remove.assert_called_once()
             call_args = mock_update.message.reply_text.call_args[0][0]
             assert "ส้มตำนัว" in call_args
-            assert "ลบ" in call_args
+            assert "Removed" in call_args
 
 
 class TestBlacklistModeCallback:
@@ -265,7 +265,7 @@ class TestBlacklistModeCallback:
             mock_bl_repo.add.assert_called_once_with(mock_db, mock_user.id, restaurant_id, BlacklistMode.PERMANENT)
             call_text = query.edit_message_text.call_args[0][0]
             assert "ร้านทดสอบ" in call_text
-            assert "ถาวร" in call_text
+            assert "permanent" in call_text
 
     @pytest.mark.asyncio
     async def test_today_mode(self):
@@ -304,7 +304,7 @@ class TestBlacklistModeCallback:
 
             mock_bl_repo.add.assert_called_once_with(mock_db, mock_user.id, restaurant_id, BlacklistMode.TODAY)
             call_text = query.edit_message_text.call_args[0][0]
-            assert "แค่วันนี้" in call_text
+            assert "today only" in call_text
 
     @pytest.mark.asyncio
     async def test_cancel(self):
@@ -321,7 +321,7 @@ class TestBlacklistModeCallback:
 
         await blacklist_mode_callback(update, context)
 
-        query.edit_message_text.assert_called_with("ยกเลิกแล้ว")
+        query.edit_message_text.assert_called_with("Cancelled")
 
 
 class TestBlacklistPickCallback:
@@ -371,4 +371,4 @@ class TestBlacklistPickCallback:
 
         await blacklist_pick_callback(update, context)
 
-        query.edit_message_text.assert_called_with("ยกเลิกแล้ว")
+        query.edit_message_text.assert_called_with("Cancelled")
