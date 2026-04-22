@@ -173,10 +173,10 @@ async def skip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     query = update.callback_query
     if not query or not query.data:
         return
-    await query.answer()
 
     parts = query.data.split(":")
     if len(parts) != 3:
+        await query.answer()
         return
 
     _, poll_id_str, index_str = parts
@@ -203,12 +203,16 @@ async def skip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         if session:
             pool = session["pool"]
             previous = session.get("previous_picks", set())
+            logger.info("Skip: pool=%d, previous=%d, current=%d", len(pool), len(previous), len(current_ids))
             for r, _ in pool:
                 if r.id not in current_ids and r.id not in previous and r.id != skipped_id:
                     replacement = r
                     break
+        else:
+            logger.warning("Skip: no session found for session_id=%s", poll.session_id)
 
         if replacement is None:
+            logger.info("Skip: no replacement found")
             await query.answer("No more restaurants available.", show_alert=True)
             return
 
@@ -242,6 +246,7 @@ async def skip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         keyboard = _build_poll_keyboard(poll.id, restaurants)
 
         poll_repo.reset_votes(db, poll_id)
+        await query.answer()
         await query.edit_message_text(text, reply_markup=keyboard)
     except Exception:
         logger.exception("Error in skip callback")
