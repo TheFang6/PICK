@@ -28,13 +28,13 @@
 - [x] [010 — Lunch & Poll Flow](./010-lunch-poll-flow.md)
 - [x] [011 — Gacha Bot Integration](./011-gacha-bot-integration.md)
 - [x] [012 — Blacklist Commands](./012-blacklist-commands.md)
-- [ ] [013 — Manual Restaurant Commands](./013-manual-restaurant-commands.md)
+- [x] [013 — Manual Restaurant Commands](./013-manual-restaurant-commands.md)
 
 ### Phase 4 — Web App (1-2 วัน)
 
-- [ ] [014 — Web Project Setup](./014-web-project-setup.md)
-- [ ] [015 — Web Blacklist Page](./015-web-blacklist-page.md)
-- [ ] [016 — Web History Page](./016-web-history-page.md)
+- [x] [014 — Web Project Setup](./014-web-project-setup.md)
+- [x] [015 — Web Blacklist Page](./015-web-blacklist-page.md)
+- [x] [016 — Web History Page](./016-web-history-page.md)
 
 ### Phase 5 — Deploy (1 วัน)
 
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 12
+- Done: 16
 - In Progress: 0
 - Blocked: 0
 

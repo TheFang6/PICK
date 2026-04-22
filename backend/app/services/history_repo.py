@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import extract, select
 from sqlalchemy.orm import Session
 
 from app.models.lunch_history import LunchHistory
@@ -51,8 +51,15 @@ def get_user_history(
     user_id: uuid.UUID,
     limit: int = 30,
     offset: int = 0,
+    month: str | None = None,
 ) -> list[LunchHistory]:
     stmt = select(LunchHistory).order_by(LunchHistory.date.desc())
+    if month:
+        year, mon = month.split("-")
+        stmt = stmt.where(
+            extract("year", LunchHistory.date) == int(year),
+            extract("month", LunchHistory.date) == int(mon),
+        )
     entries = db.execute(stmt).scalars().all()
 
     user_id_str = str(user_id)
@@ -64,11 +71,14 @@ def get_team_history(
     db: Session,
     limit: int = 30,
     offset: int = 0,
+    month: str | None = None,
 ) -> list[LunchHistory]:
-    stmt = (
-        select(LunchHistory)
-        .order_by(LunchHistory.date.desc())
-        .offset(offset)
-        .limit(limit)
-    )
+    stmt = select(LunchHistory).order_by(LunchHistory.date.desc())
+    if month:
+        year, mon = month.split("-")
+        stmt = stmt.where(
+            extract("year", LunchHistory.date) == int(year),
+            extract("month", LunchHistory.date) == int(mon),
+        )
+    stmt = stmt.offset(offset).limit(limit)
     return list(db.execute(stmt).scalars().all())

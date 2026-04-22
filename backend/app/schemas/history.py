@@ -17,8 +17,10 @@ class LogLunchRequest(BaseModel):
 class LunchHistoryResponse(BaseModel):
     id: uuid.UUID
     restaurant_id: uuid.UUID
+    restaurant_name: str = ""
     date: date_type
     attendees: list[str]
+    attendee_names: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
