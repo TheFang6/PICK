@@ -194,16 +194,16 @@ async def edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         user, _ = user_repo.upsert_by_telegram_id(db, telegram_id, update.effective_user.full_name or "Unknown")
         all_restaurants, _ = restaurant_repo.list_all(db, page_size=200)
-        my_restaurants = [r for r in all_restaurants if r.added_by == user.id]
+        manual_restaurants = [r for r in all_restaurants if r.added_by is not None]
 
-        if not my_restaurants:
-            await update.message.reply_text("You haven't added any restaurants yet. Try /addrestaurant first")
+        if not manual_restaurants:
+            await update.message.reply_text("No manually added restaurants yet. Try /addrestaurant first")
             return ConversationHandler.END
 
-        context.user_data["my_restaurants"] = {str(r.id): r.name for r in my_restaurants[:10]}
+        context.user_data["my_restaurants"] = {str(r.id): r.name for r in manual_restaurants[:10]}
 
         buttons = []
-        for i, r in enumerate(my_restaurants[:10]):
+        for i, r in enumerate(manual_restaurants[:10]):
             buttons.append([InlineKeyboardButton(f"{i+1}. {r.name}", callback_data=f"edit_pick:{r.id}")])
         buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="edit_pick:cancel")])
 
