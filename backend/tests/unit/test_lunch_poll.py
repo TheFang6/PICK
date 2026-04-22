@@ -540,3 +540,144 @@ class TestPollTimeout:
             await check_expired_polls(mock_app)
 
             mock_poll_repo.complete_poll.assert_not_called()
+
+
+class TestDmLunchPick:
+    @pytest.mark.asyncio
+    async def test_dm_lunch_shows_3_restaurants(self):
+        update = MagicMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        update.effective_chat = MagicMock()
+        update.effective_chat.type = "private"
+        update.message = AsyncMock()
+        update.message.reply_text = AsyncMock()
+        context = MagicMock()
+
+        restaurants = []
+        for name in ["Restaurant A", "Restaurant B", "Restaurant C"]:
+            r = MagicMock()
+            r.id = uuid.uuid4()
+            r.name = name
+            r.rating = 4.0
+            restaurants.append(r)
+
+        with (
+            patch("app.bot.handlers.lunch.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.lunch.user_repo") as mock_user_repo,
+            patch("app.bot.handlers.lunch.recommend") as mock_recommend,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            mock_recommend.return_value = {
+                "candidates": restaurants,
+                "session_id": "sess1",
+                "pool": [],
+                "remaining_rolls": 5,
+            }
+
+            from app.bot.handlers.lunch import lunch_handler
+
+            await lunch_handler(update, context)
+
+            call_args = update.message.reply_text.call_args
+            text = call_args[0][0]
+            assert "Pick one!" in text
+            assert "Restaurant A" in text
+            assert "Restaurant B" in text
+            assert "Restaurant C" in text
+
+            reply_markup = call_args[1]["reply_markup"]
+            buttons = reply_markup.inline_keyboard
+            assert len(buttons) == 3
+            assert "dm_pick:" in buttons[0][0].callback_data
+            assert "dm_pick:" in buttons[1][0].callback_data
+            assert "dm_pick:" in buttons[2][0].callback_data
+
+    @pytest.mark.asyncio
+    async def test_dm_pick_callback_saves_history(self):
+        restaurant_id = uuid.uuid4()
+        query = AsyncMock()
+        query.data = f"dm_pick:{restaurant_id}"
+        query.answer = AsyncMock()
+        query.edit_message_text = AsyncMock()
+
+        update = MagicMock()
+        update.callback_query = query
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.lunch.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.lunch.user_repo") as mock_user_repo,
+            patch("app.services.history_repo") as mock_hist_repo,
+            patch("app.services.restaurant_repo") as mock_rest_repo,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            mock_restaurant = MagicMock()
+            mock_restaurant.id = restaurant_id
+            mock_restaurant.name = "Picked Restaurant"
+            mock_rest_repo.get_by_id.return_value = mock_restaurant
+
+            from app.bot.handlers.lunch import dm_pick_callback
+
+            await dm_pick_callback(update, context)
+
+            mock_hist_repo.log_lunch.assert_called_once_with(
+                mock_db, restaurant_id, [mock_user.id]
+            )
+            call_text = query.edit_message_text.call_args[0][0]
+            assert "Picked Restaurant" in call_text
+            assert "Enjoy" in call_text
+
+    @pytest.mark.asyncio
+    async def test_dm_lunch_no_restaurants(self):
+        update = MagicMock()
+        update.effective_user = MagicMock()
+        update.effective_user.id = 12345
+        update.effective_user.full_name = "Test User"
+        update.effective_chat = MagicMock()
+        update.effective_chat.type = "private"
+        update.message = AsyncMock()
+        update.message.reply_text = AsyncMock()
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.lunch.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.lunch.user_repo") as mock_user_repo,
+            patch("app.bot.handlers.lunch.recommend") as mock_recommend,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_user = MagicMock()
+            mock_user.id = uuid.uuid4()
+            mock_user_repo.upsert_by_telegram_id.return_value = (mock_user, False)
+
+            mock_recommend.return_value = {
+                "candidates": [],
+                "session_id": "sess1",
+                "pool": [],
+                "remaining_rolls": 5,
+            }
+
+            from app.bot.handlers.lunch import lunch_handler
+
+            await lunch_handler(update, context)
+
+            call_text = update.message.reply_text.call_args[0][0]
+            assert "No restaurants found" in call_text
