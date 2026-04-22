@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str = ""
     base_url: str = ""
     debug: bool = False
+    office_lat: float = 13.756331
+    office_lng: float = 100.501762
 
     model_config = {"env_file": ".env"}
 
