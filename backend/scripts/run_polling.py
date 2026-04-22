@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+from telegram import BotCommand  # noqa: E402
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters  # noqa: E402
 
 from app.bot.handlers.attendance import in_handler, wfh_handler  # noqa: E402
@@ -63,8 +64,21 @@ async def main():
     app.add_handler(CallbackQueryHandler(blacklist_remove_callback, pattern=r"^bl_rm:"))
     app.add_handler(MessageHandler(filters.COMMAND, unknown_handler))
 
+    commands = [
+        BotCommand("start", "Register and get pairing link for web app"),
+        BotCommand("help", "Show available commands"),
+        BotCommand("lunch", "Get restaurant recommendations for lunch"),
+        BotCommand("gacha", "Random solo restaurant pick"),
+        BotCommand("wfh", "Mark yourself as working from home today"),
+        BotCommand("in", "Mark yourself as in the office today"),
+        BotCommand("blacklist", "Manage your restaurant blacklist"),
+        BotCommand("addrestaurant", "Add a new restaurant"),
+        BotCommand("editrestaurant", "Edit or delete your restaurants"),
+    ]
+
     logging.info("Bot starting in polling mode...")
     await app.initialize()
+    await app.bot.set_my_commands(commands)
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)
 
