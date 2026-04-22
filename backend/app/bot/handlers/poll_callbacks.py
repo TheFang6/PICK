@@ -5,6 +5,7 @@ import uuid
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models.poll import PollStatus
 from app.services import history_repo, poll_repo, restaurant_repo, user_repo
@@ -147,13 +148,13 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if pick.lat and pick.lng:
             from math import atan2, cos, radians, sin, sqrt
             R = 6371000
-            olat, olng = 13.756331, 100.501762
+            olat, olng = settings.office_lat, settings.office_lng
             rlat1, rlat2 = radians(olat), radians(pick.lat)
             dlat = radians(pick.lat - olat)
             dlng = radians(pick.lng - olng)
             a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
             d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
-            distance = f"{int(d)}m"
+            distance = f"{d / 1000:.2f}km" if d >= 1000 else f"{int(d)}m"
 
         rating = f"⭐ {pick.rating}" if pick.rating else ""
         lines = ["\U0001F3B2 Gacha picked!\n"]
