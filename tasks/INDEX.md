@@ -27,7 +27,7 @@
 - [x] [009 — Attendance System](./009-attendance-system.md)
 - [x] [010 — Lunch & Poll Flow](./010-lunch-poll-flow.md)
 - [x] [011 — Gacha Bot Integration](./011-gacha-bot-integration.md)
-- [ ] [012 — Blacklist Commands](./012-blacklist-commands.md)
+- [x] [012 — Blacklist Commands](./012-blacklist-commands.md)
 - [ ] [013 — Manual Restaurant Commands](./013-manual-restaurant-commands.md)
 
 ### Phase 4 — Web App (1-2 วัน)
@@ -65,7 +65,7 @@
 ## 📊 Status Summary
 
 - Total: 19 tasks
-- Done: 11
+- Done: 12
 - In Progress: 0
 - Blocked: 0
 
