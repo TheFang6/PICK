@@ -47,10 +47,6 @@ async def vote_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         vote_counts = poll_repo.get_vote_counts(db, poll_id)
         total_votes = poll_repo.get_total_votes(db, poll_id)
 
-        from app.services import attendance_repo
-        attendees = attendance_repo.get_attendees(db)
-        total_attendees = len(attendees)
-
         candidate_ids = [uuid.UUID(cid) for cid in poll.candidates]
         restaurants = []
         for cid in candidate_ids:
@@ -59,7 +55,7 @@ async def vote_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 restaurants.append(r)
 
         from app.bot.handlers.lunch import _build_poll_text, _build_poll_keyboard
-        text = _build_poll_text(restaurants, vote_counts=vote_counts, total_votes=total_votes, total_attendees=total_attendees)
+        text = _build_poll_text(restaurants, vote_counts=vote_counts, total_votes=total_votes)
         keyboard = _build_poll_keyboard(poll.id, restaurants)
 
         await query.edit_message_text(text, reply_markup=keyboard)

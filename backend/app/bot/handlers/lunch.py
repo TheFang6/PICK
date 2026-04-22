@@ -31,7 +31,7 @@ def _build_poll_keyboard(poll_id: uuid.UUID, candidates: list) -> InlineKeyboard
     return InlineKeyboardMarkup(buttons)
 
 
-def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_votes: int = 0, total_attendees: int = 0) -> str:
+def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_votes: int = 0) -> str:
     from zoneinfo import ZoneInfo
     from datetime import datetime
 
@@ -40,7 +40,7 @@ def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_vo
 
     lines = [
         f"\U0001F37D Lunch today ({date_str})",
-        f"\u23F1 Vote within 10 min | Votes: {total_votes}/{total_attendees}",
+        f"\u23F1 Vote within 10 min | Votes: {total_votes}",
         "",
     ]
 
@@ -138,7 +138,7 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             return
 
         poll = poll_repo.create_poll(db, str(update.effective_chat.id), [r.id for r in candidates], session_id, user.id)
-        text = _build_poll_text(candidates, total_attendees=len(attendee_ids))
+        text = _build_poll_text(candidates)
         keyboard = _build_poll_keyboard(poll.id, candidates)
         msg = await update.message.reply_text(text, reply_markup=keyboard)
         poll_repo.set_message_id(db, poll.id, msg.message_id)
