@@ -3,6 +3,7 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
+from app.config import settings
 from app.database import SessionLocal
 from app.services import pairing_repo, user_repo
 
@@ -36,7 +37,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton(
                 "\U0001F310 Open Web App",
-                url=f"https://pick.vercel.app/pair?token={token.token}",
+                url=f"{settings.web_url}/pair?token={token.token}",
             )]
         ])
         await update.message.reply_text(text, reply_markup=keyboard)

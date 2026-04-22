@@ -8,13 +8,14 @@ from app.api.gacha import router as gacha_router
 from app.api.history import router as history_router
 from app.api.recommend import router as recommend_router
 from app.api.restaurants import router as restaurants_router
+from app.api.pair import router as pair_router
 from app.api.telegram import router as telegram_router
 
 app = FastAPI(title="Pick API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "https://pick.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,6 +28,7 @@ app.include_router(recommend_router)
 app.include_router(history_router)
 app.include_router(blacklist_router)
 app.include_router(gacha_router)
+app.include_router(pair_router)
 app.include_router(telegram_router)
 
 

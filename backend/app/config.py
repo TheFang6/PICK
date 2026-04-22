@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
     base_url: str = ""
+    web_url: str = "https://pick.vercel.app"
     debug: bool = False
     office_lat: float = 18.7964464
     office_lng: float = 99.0164042
