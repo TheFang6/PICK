@@ -164,13 +164,13 @@ async def add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
             else:
                 price_level = 4
 
-        types = [data["category"]] if data.get("category") else None
+        types = [data["category"]] if data.get("category") else []
 
         create_data = ManualRestaurantCreate(
             name=data["name"],
             price_level=price_level,
             types=types,
-            closed_weekdays=data.get("closed_days") or None,
+            closed_weekdays=data.get("closed_days") or [],
         )
         restaurant_repo.create_manual(db, create_data, user.id)
 
@@ -424,7 +424,7 @@ def _build_closed_days_keyboard(selected: list[int]) -> InlineKeyboardMarkup:
     buttons = []
     row = []
     for i, name in enumerate(DAY_NAMES):
-        check = "✅" if i in selected else "❌"
+        check = "🔴" if i in selected else "🟢"
         row.append(InlineKeyboardButton(f"{check} {name}", callback_data=f"add_day:{i}"))
         if len(row) == 3 or i == len(DAY_NAMES) - 1:
             buttons.append(row)
@@ -437,7 +437,7 @@ def _build_edit_closed_days_keyboard(selected: list[int]) -> InlineKeyboardMarku
     buttons = []
     row = []
     for i, name in enumerate(DAY_NAMES):
-        check = "✅" if i in selected else "❌"
+        check = "🔴" if i in selected else "🟢"
         row.append(InlineKeyboardButton(f"{check} {name}", callback_data=f"edit_day:{i}"))
         if len(row) == 3 or i == len(DAY_NAMES) - 1:
             buttons.append(row)
