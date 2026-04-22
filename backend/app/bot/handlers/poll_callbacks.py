@@ -154,7 +154,7 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             dlng = radians(pick.lng - olng)
             a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
             d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
-            distance = f"{int(d)}m"
+            distance = f"{d / 1000:.2f}km" if d >= 1000 else f"{int(d)}m"
 
         rating = f"⭐ {pick.rating}" if pick.rating else ""
         lines = ["\U0001F3B2 Gacha picked!\n"]

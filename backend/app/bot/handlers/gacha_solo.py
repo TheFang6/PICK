@@ -23,7 +23,7 @@ def _format_pick(pick):
         dlng = radians(pick.lng - settings.office_lng)
         a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
         d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
-        distance = f"{int(d)}m"
+        distance = f"{d / 1000:.2f}km" if d >= 1000 else f"{int(d)}m"
 
     rating = f"\u2b50 {pick.rating}" if pick.rating else ""
     parts = [f"\U0001f3af Pick for you!\n"]
