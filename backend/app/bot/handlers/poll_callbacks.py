@@ -5,6 +5,7 @@ import uuid
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models.poll import PollStatus
 from app.services import history_repo, poll_repo, restaurant_repo, user_repo
@@ -147,7 +148,7 @@ async def gacha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if pick.lat and pick.lng:
             from math import atan2, cos, radians, sin, sqrt
             R = 6371000
-            olat, olng = 13.756331, 100.501762
+            olat, olng = settings.office_lat, settings.office_lng
             rlat1, rlat2 = radians(olat), radians(pick.lat)
             dlat = radians(pick.lat - olat)
             dlng = radians(pick.lng - olng)
