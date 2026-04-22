@@ -12,9 +12,10 @@ backend/
 │   │   ├── blacklist.py          # POST /blacklist, DELETE /blacklist/{id}, GET /blacklist
 │   │   ├── dev.py                # Developer/debug endpoints
 │   │   ├── gacha.py              # POST /gacha/{session_id} — reshuffle picks
-│   │   ├── history.py            # GET /history, GET /history/team, POST /history
+│   │   ├── history.py            # GET /history, GET /history/team, POST /history (with month filter)
+│   │   ├── pair.py               # POST /pair, GET /me, POST /logout — web session management
 │   │   ├── recommend.py          # POST /recommend — restaurant recommendation
-│   │   ├── restaurants.py        # CRUD /restaurants + POST /restaurants/sync-from-maps
+│   │   ├── restaurants.py        # CRUD /restaurants + search + POST /restaurants/sync-from-maps
 │   │   └── telegram.py           # POST /webhook/telegram — Telegram bot webhook
 │   │
 │   ├── bot/                      # Telegram bot framework
@@ -40,6 +41,7 @@ backend/
 │   │   ├── history_repo.py       # Lunch history CRUD (log_lunch, get_recent, user/team history)
 │   │   ├── pairing_repo.py       # Pairing token CRUD (create, validate, consume, cleanup)
 │   │   ├── poll_repo.py          # Poll CRUD (create, vote, counts, winner, expire, cancel, complete)
+│   │   ├── web_session_repo.py   # Web session CRUD (create, validate, delete, cleanup)
 │   │   ├── recommendation.py     # 5-stage recommendation pipeline (with history + blacklist filter)
 │   │   ├── restaurant_repo.py    # Restaurant CRUD operations (upsert, list, update, delete)
 │   │   ├── session_pool.py       # In-memory session pool cache (create, get, expire, TTL 2hr)
@@ -50,6 +52,7 @@ backend/
 │   │   ├── lunch_history.py      # LunchHistory model (restaurant_id, date, attendees)
 │   │   ├── pairing_token.py      # PairingToken model (token, user_id, expires_at, consumed_at)
 │   │   ├── poll.py               # PollSession + PollVote models, PollStatus enum (ACTIVE/COMPLETED/CANCELLED)
+│   │   ├── web_session.py        # WebSession model (user_id, session_token, expires_at)
 │   │   ├── restaurant.py         # Restaurant model + RestaurantSource enum
 │   │   ├── user.py               # User model (telegram_id, name)
 │   │   └── user_blacklist.py     # UserBlacklist model (user_id, restaurant_id, mode, expires_at)
@@ -78,7 +81,9 @@ backend/
 │       ├── test_gacha_bot.py    # Gacha bot integration: vote reset, solo /gacha handler (7 cases)
 │       ├── test_restaurant_cmd.py # Add/edit restaurant conversation handlers (18 cases)
 │       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (24 cases)
-│       └── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
+│       ├── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
+│       ├── test_pair.py          # Pairing endpoint + session management tests (16 cases)
+│       └── test_web_features.py  # Restaurant search + history month filter + enriched responses (13 cases)
 │
 ├── alembic/                      # Database migrations
 │   ├── env.py                    # Alembic config
@@ -88,7 +93,8 @@ backend/
 │       ├── 855e8189a896_...py    # Create user_blacklist table
 │       ├── 7b1ab9603757_...py    # Create pairing_tokens table
 │       ├── ef50f8b44f33_...py    # Create user_attendance table
-│       └── a367868b9af9_...py    # Create poll_sessions + poll_votes tables
+│       ├── a367868b9af9_...py    # Create poll_sessions + poll_votes tables
+│       └── b1c2d3e4f5a6_...py    # Create web_sessions table
 │
 ├── scripts/                      # Utility scripts
 │   ├── check_db.py               # DB connection check
