@@ -64,6 +64,16 @@ def create_manual(db: Session, data: ManualRestaurantCreate, user_id: uuid.UUID)
     return restaurant
 
 
+def search(db: Session, query: str, limit: int = 20) -> list[Restaurant]:
+    stmt = (
+        select(Restaurant)
+        .where(Restaurant.name.ilike(f"%{query}%"))
+        .order_by(Restaurant.name)
+        .limit(limit)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def get_by_id(db: Session, restaurant_id: uuid.UUID) -> Restaurant | None:
     return db.get(Restaurant, restaurant_id)
 
