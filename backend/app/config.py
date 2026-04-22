@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     debug: bool = False
     office_lat: float = 18.7964464
     office_lng: float = 99.0164042
+    office_radius: int = 1000
 
     model_config = {"env_file": ".env"}
 

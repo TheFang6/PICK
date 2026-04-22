@@ -50,6 +50,7 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             user_ids=[user.id],
             office_lat=settings.office_lat,
             office_lng=settings.office_lng,
+            radius=settings.office_radius,
         )
 
         candidates = result["candidates"]
@@ -124,6 +125,7 @@ async def gacha_reroll_callback(
             user_ids=[user.id],
             office_lat=settings.office_lat,
             office_lng=settings.office_lng,
+            radius=settings.office_radius,
         )
 
         candidates = result["candidates"]
