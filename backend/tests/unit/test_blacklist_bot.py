@@ -45,7 +45,7 @@ class TestBlacklistHandler:
         await blacklist_handler(mock_update, mock_context)
 
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "Please specify a restaurant" in call_args
+        assert "Please specify a restaurant name" in call_args
 
     @pytest.mark.asyncio
     async def test_add_not_found(self, mock_update, mock_context):
@@ -114,7 +114,7 @@ class TestBlacklistHandler:
             await blacklist_handler(mock_update, mock_context)
 
             call_args = mock_update.message.reply_text.call_args
-            assert "2 restaurants" in call_args[0][0]
+            assert "Found 2 restaurants" in call_args[0][0]
 
     @pytest.mark.asyncio
     async def test_list_empty(self, mock_update, mock_context):
@@ -188,7 +188,7 @@ class TestBlacklistHandler:
         await blacklist_handler(mock_update, mock_context)
 
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "Please specify a restaurant" in call_args
+        assert "Please specify a restaurant name" in call_args
 
     @pytest.mark.asyncio
     async def test_remove_success(self, mock_update, mock_context):

@@ -11,6 +11,7 @@ from app.bot.handlers.gacha_solo import gacha_confirm_callback, gacha_handler, g
 from app.bot.handlers.help import help_handler
 from app.bot.handlers.lunch import dm_pick_callback, lunch_handler
 from app.bot.handlers.poll_callbacks import cancel_callback, gacha_callback, skip_callback, vote_callback
+from app.bot.handlers.restaurant_cmd import build_add_conversation_handler, build_edit_conversation_handler
 from app.bot.handlers.start import start_handler
 from app.bot.handlers.unknown import unknown_handler
 from app.config import settings
@@ -34,6 +35,8 @@ async def get_application() -> Application:
         _application.add_handler(CommandHandler("lunch", lunch_handler))
         _application.add_handler(CommandHandler("gacha", gacha_handler))
         _application.add_handler(CommandHandler("blacklist", blacklist_handler))
+        _application.add_handler(build_add_conversation_handler())
+        _application.add_handler(build_edit_conversation_handler())
         _application.add_handler(CallbackQueryHandler(vote_callback, pattern=r"^vote:"))
         _application.add_handler(CallbackQueryHandler(cancel_callback, pattern=r"^cancel:"))
         _application.add_handler(CallbackQueryHandler(gacha_callback, pattern=r"^gacha:"))

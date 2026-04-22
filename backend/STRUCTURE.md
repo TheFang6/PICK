@@ -25,7 +25,8 @@ backend/
 │   │   │   ├── blacklist.py      # /blacklist add|list|remove — manage restaurant blacklist
 │   │   │   ├── gacha_solo.py     # /gacha — solo random pick with confirm/reroll flow
 │   │   │   ├── lunch.py          # /lunch — recommend restaurants, create poll with inline keyboard
-│   │   │   ├── poll_callbacks.py # Callback handlers: vote, cancel, gacha button presses (resets votes on gacha)
+│   │   │   ├── restaurant_cmd.py  # /addrestaurant + /editrestaurant — ConversationHandler multi-step flows
+│   │   │   ├── poll_callbacks.py # Callback handlers: vote, cancel, gacha, skip button presses
 │   │   │   ├── start.py          # /start — user registration + pairing token
 │   │   │   ├── help.py           # /help — list all commands
 │   │   │   └── unknown.py        # Unknown command fallback
@@ -75,6 +76,7 @@ backend/
 │       ├── test_attendance.py    # Attendance repo + handlers + API tests (16 cases)
 │       ├── test_blacklist_bot.py  # Blacklist bot commands: add/list/remove + callbacks (14 cases)
 │       ├── test_gacha_bot.py    # Gacha bot integration: vote reset, solo /gacha handler (7 cases)
+│       ├── test_restaurant_cmd.py # Add/edit restaurant conversation handlers (18 cases)
 │       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (24 cases)
 │       └── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
 │
