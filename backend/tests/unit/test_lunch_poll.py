@@ -681,3 +681,133 @@ class TestDmLunchPick:
 
             call_text = update.message.reply_text.call_args[0][0]
             assert "No restaurants found" in call_text
+
+
+class TestSkipCallback:
+    def _make_query(self, poll_id, index=0):
+        query = AsyncMock()
+        query.data = f"skip:{poll_id}:{index}"
+        query.from_user = MagicMock()
+        query.from_user.id = 12345
+        query.from_user.full_name = "Test"
+        query.answer = AsyncMock()
+        query.edit_message_text = AsyncMock()
+        return query
+
+    @pytest.mark.asyncio
+    async def test_skip_replaces_restaurant(self):
+        poll_id = uuid.uuid4()
+        r1_id = uuid.uuid4()
+        r2_id = uuid.uuid4()
+        r3_id = uuid.uuid4()
+        r4_id = uuid.uuid4()
+
+        query = self._make_query(poll_id, 0)
+        update = MagicMock()
+        update.callback_query = query
+        context = MagicMock()
+
+        r4 = MagicMock()
+        r4.id = r4_id
+        r4.name = "Replacement"
+        r4.rating = 4.2
+
+        with (
+            patch("app.bot.handlers.poll_callbacks.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.poll_callbacks.poll_repo") as mock_poll_repo,
+            patch("app.bot.handlers.poll_callbacks.restaurant_repo") as mock_rest_repo,
+            patch("app.bot.handlers.poll_callbacks.get_session") as mock_get_session,
+            patch("app.bot.handlers.poll_callbacks.add_previous_picks") as mock_add_picks,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_poll = MagicMock()
+            mock_poll.id = poll_id
+            mock_poll.status = PollStatus.ACTIVE
+            mock_poll.candidates = [str(r1_id), str(r2_id), str(r3_id)]
+            mock_poll.session_id = "sess1"
+            mock_poll_repo.get_poll.return_value = mock_poll
+            mock_poll_repo.get_vote_counts.return_value = {}
+            mock_poll_repo.get_total_votes.return_value = 0
+
+            mock_get_session.return_value = {
+                "pool": [(r4, 3.5)],
+                "previous_picks": {r1_id, r2_id, r3_id},
+            }
+
+            mock_rest = MagicMock()
+            mock_rest.id = r4_id
+            mock_rest.name = "Replacement"
+            mock_rest.rating = 4.2
+            mock_rest_repo.get_by_id.return_value = mock_rest
+
+            from app.bot.handlers.poll_callbacks import skip_callback
+
+            await skip_callback(update, context)
+
+            assert mock_poll.candidates[0] == str(r4_id)
+            mock_add_picks.assert_called_once_with("sess1", {r4_id})
+            mock_poll_repo.reset_votes.assert_called_once()
+            query.edit_message_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_skip_no_replacement_available(self):
+        poll_id = uuid.uuid4()
+        r1_id = uuid.uuid4()
+
+        query = self._make_query(poll_id, 0)
+        update = MagicMock()
+        update.callback_query = query
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.poll_callbacks.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.poll_callbacks.poll_repo") as mock_poll_repo,
+            patch("app.bot.handlers.poll_callbacks.get_session") as mock_get_session,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_poll = MagicMock()
+            mock_poll.id = poll_id
+            mock_poll.status = PollStatus.ACTIVE
+            mock_poll.candidates = [str(r1_id)]
+            mock_poll.session_id = "sess1"
+            mock_poll_repo.get_poll.return_value = mock_poll
+
+            mock_get_session.return_value = {
+                "pool": [],
+                "previous_picks": {r1_id},
+            }
+
+            from app.bot.handlers.poll_callbacks import skip_callback
+
+            await skip_callback(update, context)
+
+            query.answer.assert_called_with("No more restaurants available.", show_alert=True)
+
+    @pytest.mark.asyncio
+    async def test_skip_poll_ended(self):
+        poll_id = uuid.uuid4()
+        query = self._make_query(poll_id, 0)
+        update = MagicMock()
+        update.callback_query = query
+        context = MagicMock()
+
+        with (
+            patch("app.bot.handlers.poll_callbacks.SessionLocal") as mock_session_cls,
+            patch("app.bot.handlers.poll_callbacks.poll_repo") as mock_poll_repo,
+        ):
+            mock_db = MagicMock()
+            mock_session_cls.return_value = mock_db
+
+            mock_poll = MagicMock()
+            mock_poll.status = PollStatus.COMPLETED
+            mock_poll_repo.get_poll.return_value = mock_poll
+
+            from app.bot.handlers.poll_callbacks import skip_callback
+
+            await skip_callback(update, context)
+
+            query.answer.assert_called_with("This poll has ended.", show_alert=True)
