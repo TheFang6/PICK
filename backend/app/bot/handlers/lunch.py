@@ -20,10 +20,13 @@ def _build_poll_keyboard(poll_id: uuid.UUID, candidates: list) -> InlineKeyboard
     for i, r in enumerate(candidates):
         emoji = number_emojis[i] if i < len(number_emojis) else f"{i+1}."
         label = f"{emoji} {r.name}"
-        buttons.append([
-            InlineKeyboardButton(label, callback_data=f"vote:{poll_id}:{i}"),
-            InlineKeyboardButton("❌", callback_data=f"skip:{poll_id}:{i}"),
-        ])
+        buttons.append([InlineKeyboardButton(label, callback_data=f"vote:{poll_id}:{i}")])
+
+    skip_row = []
+    for i in range(len(candidates)):
+        emoji = number_emojis[i] if i < len(number_emojis) else f"{i+1}."
+        skip_row.append(InlineKeyboardButton(f"❌ {emoji}", callback_data=f"skip:{poll_id}:{i}"))
+    buttons.append(skip_row)
 
     buttons.append([
         InlineKeyboardButton("\U0001F3B2 Gacha!", callback_data=f"gacha:{poll_id}"),
