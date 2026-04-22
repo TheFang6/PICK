@@ -19,10 +19,19 @@ router = APIRouter(prefix="/restaurants", tags=["restaurants"])
 @router.get("", response_model=RestaurantListResponse)
 def list_restaurants(
     source: str | None = Query(None, description="Filter by source: google_maps or manual"),
+    search: str | None = Query(None, description="Search by name"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
+    if search:
+        results = restaurant_repo.search(db, query=search, limit=page_size)
+        return RestaurantListResponse(
+            restaurants=[RestaurantResponse.model_validate(r) for r in results],
+            total=len(results),
+            page=1,
+            page_size=page_size,
+        )
     restaurants, total = restaurant_repo.list_all(db, source=source, page=page, page_size=page_size)
     return RestaurantListResponse(
         restaurants=[RestaurantResponse.model_validate(r) for r in restaurants],

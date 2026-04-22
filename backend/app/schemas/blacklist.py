@@ -14,6 +14,7 @@ class BlacklistResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     restaurant_id: uuid.UUID
+    restaurant_name: str = ""
     mode: str
     expires_at: Optional[datetime] = None
     created_at: datetime

@@ -44,6 +44,11 @@ def list_blacklist(
     db: Session = Depends(get_db),
 ):
     entries = blacklist_repo.list_by_user(db, user_id=user_id)
-    return BlacklistListResponse(
-        entries=[BlacklistResponse.model_validate(e) for e in entries],
-    )
+    result = []
+    for e in entries:
+        resp = BlacklistResponse.model_validate(e)
+        restaurant = restaurant_repo.get_by_id(db, e.restaurant_id)
+        if restaurant:
+            resp.restaurant_name = restaurant.name
+        result.append(resp)
+    return BlacklistListResponse(entries=result)
