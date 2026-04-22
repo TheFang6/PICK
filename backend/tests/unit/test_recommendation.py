@@ -157,7 +157,7 @@ class TestRecommendEndpoint:
     @patch("app.services.recommendation.fetch_candidates")
     async def test_full_pipeline(self, mock_fetch):
         restaurants = [_make_restaurant(name=f"R{i}", rating=4.0 + i * 0.1) for i in range(15)]
-        mock_fetch.return_value = restaurants
+        mock_fetch.return_value = (restaurants, set())
 
         from app.services.recommendation import recommend
 
@@ -181,7 +181,7 @@ class TestRecommendEndpoint:
     @patch("app.services.recommendation.fetch_candidates")
     async def test_few_restaurants(self, mock_fetch):
         restaurants = [_make_restaurant(name=f"R{i}", rating=4.0) for i in range(2)]
-        mock_fetch.return_value = restaurants
+        mock_fetch.return_value = (restaurants, set())
 
         from app.services.recommendation import recommend
 

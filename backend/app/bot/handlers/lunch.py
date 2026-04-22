@@ -12,8 +12,6 @@ from app.services.recommendation import recommend
 
 logger = logging.getLogger(__name__)
 
-OFFICE_LAT = 13.756331
-OFFICE_LNG = 100.501762
 
 
 def _build_poll_keyboard(poll_id: uuid.UUID, candidates: list) -> InlineKeyboardMarkup:
@@ -102,8 +100,8 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             result = await recommend(
                 db=db,
                 user_ids=[user.id],
-                office_lat=OFFICE_LAT,
-                office_lng=OFFICE_LNG,
+                office_lat=settings.office_lat,
+                office_lng=settings.office_lng,
             )
             candidates = result["candidates"]
             if not candidates:
@@ -126,8 +124,8 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         result = await recommend(
             db=db,
             user_ids=attendee_ids,
-            office_lat=OFFICE_LAT,
-            office_lng=OFFICE_LNG,
+            office_lat=settings.office_lat,
+            office_lng=settings.office_lng,
         )
 
         candidates = result["candidates"]

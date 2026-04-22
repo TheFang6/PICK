@@ -4,14 +4,12 @@ import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
+from app.config import settings
 from app.database import SessionLocal
 from app.services import history_repo, user_repo
 from app.services.recommendation import recommend
 
 logger = logging.getLogger(__name__)
-
-OFFICE_LAT = 13.756331
-OFFICE_LNG = 100.501762
 
 
 def _format_pick(pick):
@@ -20,9 +18,9 @@ def _format_pick(pick):
         from math import atan2, cos, radians, sin, sqrt
 
         R = 6371000
-        rlat1, rlat2 = radians(OFFICE_LAT), radians(pick.lat)
-        dlat = radians(pick.lat - OFFICE_LAT)
-        dlng = radians(pick.lng - OFFICE_LNG)
+        rlat1, rlat2 = radians(settings.office_lat), radians(pick.lat)
+        dlat = radians(pick.lat - settings.office_lat)
+        dlng = radians(pick.lng - settings.office_lng)
         a = sin(dlat / 2) ** 2 + cos(rlat1) * cos(rlat2) * sin(dlng / 2) ** 2
         d = R * 2 * atan2(sqrt(a), sqrt(1 - a))
         distance = f"{int(d)}m"
@@ -50,8 +48,8 @@ async def gacha_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         result = await recommend(
             db=db,
             user_ids=[user.id],
-            office_lat=OFFICE_LAT,
-            office_lng=OFFICE_LNG,
+            office_lat=settings.office_lat,
+            office_lng=settings.office_lng,
         )
 
         candidates = result["candidates"]
@@ -124,8 +122,8 @@ async def gacha_reroll_callback(
         result = await recommend(
             db=db,
             user_ids=[user.id],
-            office_lat=OFFICE_LAT,
-            office_lng=OFFICE_LNG,
+            office_lat=settings.office_lat,
+            office_lng=settings.office_lng,
         )
 
         candidates = result["candidates"]

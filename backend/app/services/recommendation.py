@@ -1,7 +1,8 @@
 import logging
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from math import log1p, radians, sin, cos, sqrt, atan2
 
 from sqlalchemy.orm import Session
@@ -29,28 +30,33 @@ async def fetch_candidates(
     office_lat: float,
     office_lng: float,
     radius: int = 1000,
-) -> list[Restaurant]:
+) -> tuple[list[Restaurant], set[str]]:
     maps_result = await search_nearby(lat=office_lat, lng=office_lng, radius=radius)
 
+    closed_place_ids: set[str] = set()
     if maps_result.status == "OK":
         for r in maps_result.restaurants:
             restaurant_repo.upsert_from_maps(db, r)
+            if r.open_now is False:
+                closed_place_ids.add(r.place_id)
 
     all_restaurants, _ = restaurant_repo.list_all(db, page_size=100)
-    return all_restaurants
+    return all_restaurants, closed_place_ids
 
 
 def filter_restaurants(
     candidates: list[Restaurant],
     context: dict,
 ) -> list[Restaurant]:
-    today_weekday = context.get("today_weekday", datetime.now(timezone.utc).weekday())
-    today_date = context.get("today_date", datetime.now(timezone.utc).date())
+    bkk = ZoneInfo("Asia/Bangkok")
+    today_weekday = context.get("today_weekday", datetime.now(bkk).weekday())
+    today_date = context.get("today_date", datetime.now(bkk).date())
     office_lat = context.get("office_lat")
     office_lng = context.get("office_lng")
     radius = context.get("radius", 1000)
     recent_restaurant_ids = context.get("recent_restaurant_ids", set())
     blacklisted_ids = context.get("blacklisted_ids", set())
+    closed_place_ids = context.get("closed_place_ids", set())
 
     filtered = []
     for r in candidates:
@@ -62,6 +68,8 @@ def filter_restaurants(
 
         if r.source == RestaurantSource.GOOGLE_MAPS:
             if hasattr(r, "business_status") and r.business_status == "CLOSED_PERMANENTLY":
+                continue
+            if getattr(r, "place_id", None) and r.place_id in closed_place_ids:
                 continue
 
         closed_weekdays = r.closed_weekdays or []
@@ -165,20 +173,23 @@ async def recommend(
     office_lng: float,
     radius: int = 1000,
 ) -> dict:
-    candidates = await fetch_candidates(db, office_lat, office_lng, radius)
+    candidates, closed_place_ids = await fetch_candidates(db, office_lat, office_lng, radius)
 
     recent_restaurant_ids = history_repo.get_recent_restaurant_ids(db, user_ids, days=7)
     blacklisted_ids = blacklist_repo.get_blacklisted_restaurant_ids(db, user_ids)
 
+    bkk = ZoneInfo("Asia/Bangkok")
+    now_bkk = datetime.now(bkk)
     context = {
-        "today_weekday": datetime.now(timezone.utc).weekday(),
-        "today_date": datetime.now(timezone.utc).date(),
+        "today_weekday": now_bkk.weekday(),
+        "today_date": now_bkk.date(),
         "attendees": user_ids,
         "office_lat": office_lat,
         "office_lng": office_lng,
         "radius": radius,
         "recent_restaurant_ids": recent_restaurant_ids,
         "blacklisted_ids": blacklisted_ids,
+        "closed_place_ids": closed_place_ids,
     }
 
     filtered = filter_restaurants(candidates, context)
