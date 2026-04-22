@@ -108,6 +108,7 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 user_ids=[user.id],
                 office_lat=settings.office_lat,
                 office_lng=settings.office_lng,
+                radius=settings.office_radius,
             )
             candidates = result["candidates"]
             if not candidates:
@@ -132,6 +133,7 @@ async def lunch_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             user_ids=attendee_ids,
             office_lat=settings.office_lat,
             office_lng=settings.office_lng,
+            radius=settings.office_radius,
         )
 
         candidates = result["candidates"]
