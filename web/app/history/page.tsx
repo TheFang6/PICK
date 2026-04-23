@@ -129,6 +129,7 @@ export default function HistoryPage() {
 
           <div className="flex items-center gap-2">
             <button
+              aria-label="Previous month"
               onClick={() => changeMonth(-1)}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/70 text-gray-500 hover:bg-white transition-colors"
             >
@@ -138,6 +139,7 @@ export default function HistoryPage() {
               {monthLabel}
             </span>
             <button
+              aria-label="Next month"
               onClick={() => changeMonth(1)}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/70 text-gray-500 hover:bg-white transition-colors"
             >
