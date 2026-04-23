@@ -25,6 +25,7 @@ class Restaurant(Base):
     lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     vicinity: Mapped[str | None] = mapped_column(Text, nullable=True)
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
+    user_ratings_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
     price_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     types: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=list)
     photo_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
