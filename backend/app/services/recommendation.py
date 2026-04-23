@@ -3,7 +3,7 @@ import random
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from math import log1p, radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2
 
 from sqlalchemy.orm import Session
 
@@ -57,6 +57,8 @@ def filter_restaurants(
     recent_restaurant_ids = context.get("recent_restaurant_ids", set())
     blacklisted_ids = context.get("blacklisted_ids", set())
     closed_place_ids = context.get("closed_place_ids", set())
+    rating_threshold = context.get("rating_threshold", 3.8)
+    ratings_count_threshold = context.get("ratings_count_threshold", 20)
 
     filtered = []
     for r in candidates:
@@ -67,8 +69,6 @@ def filter_restaurants(
             continue
 
         if r.source == RestaurantSource.GOOGLE_MAPS:
-            if hasattr(r, "business_status") and r.business_status == "CLOSED_PERMANENTLY":
-                continue
             if getattr(r, "place_id", None) and r.place_id in closed_place_ids:
                 continue
 
@@ -96,51 +96,24 @@ def filter_restaurants(
             if dist > radius:
                 continue
 
+        if r.rating is None or r.rating < rating_threshold:
+            continue
+        ratings_total = getattr(r, "user_ratings_total", None) or 0
+        if ratings_total < ratings_count_threshold:
+            continue
+
         filtered.append(r)
 
     return filtered
 
 
-def score_restaurants(
+def build_pool(
     restaurants: list[Restaurant],
-    context: dict,
-) -> list[tuple[Restaurant, float]]:
-    office_lat = context.get("office_lat")
-    office_lng = context.get("office_lng")
-    max_distance = context.get("radius", 1000)
-
-    scored = []
-    for r in restaurants:
-        rating = r.rating or 3.5
-        ratings_total = r.user_ratings_total if hasattr(r, "user_ratings_total") else 0
-        ratings_count = ratings_total or 0
-
-        distance_score = 1.0
-        if office_lat and office_lng and r.lat and r.lng:
-            dist = _haversine(office_lat, office_lng, r.lat, r.lng)
-            distance_score = max(0, 1 - dist / max_distance)
-
-        price = r.price_level or 2
-        price_score = 1 - (price / 4)
-
-        score = (
-            rating * 0.50
-            + log1p(ratings_count) * 0.35
-            + distance_score * 0.05
-            + price_score * 0.10
-        )
-
-        scored.append((r, round(score, 4)))
-
-    scored.sort(key=lambda x: x[1], reverse=True)
-    return scored
-
-
-def select_pool(
-    scored: list[tuple[Restaurant, float]],
     pool_size: int = 10,
 ) -> list[tuple[Restaurant, float]]:
-    return scored[:pool_size]
+    shuffled = list(restaurants)
+    random.shuffle(shuffled)
+    return [(r, 1.0) for r in shuffled[:pool_size]]
 
 
 def sample_candidates(
@@ -180,6 +153,7 @@ async def recommend(
 
     bkk = ZoneInfo("Asia/Bangkok")
     now_bkk = datetime.now(bkk)
+    from app.config import settings
     context = {
         "today_weekday": now_bkk.weekday(),
         "today_date": now_bkk.date(),
@@ -190,11 +164,12 @@ async def recommend(
         "recent_restaurant_ids": recent_restaurant_ids,
         "blacklisted_ids": blacklisted_ids,
         "closed_place_ids": closed_place_ids,
+        "rating_threshold": settings.rating_threshold,
+        "ratings_count_threshold": settings.ratings_count_threshold,
     }
 
     filtered = filter_restaurants(candidates, context)
-    scored = score_restaurants(filtered, context)
-    pool = select_pool(scored, pool_size=10)
+    pool = build_pool(filtered, pool_size=10)
     picks = sample_candidates(pool, k=3)
 
     if db is not None:

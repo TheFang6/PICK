@@ -184,6 +184,7 @@ class TestRecommendationHistoryFilter:
             lat: float | None = 13.756
             lng: float | None = 100.502
             rating: float | None = 4.0
+            user_ratings_total: int | None = 50
             price_level: int | None = 2
             closed_weekdays: list = field(default_factory=list)
             closed_monthly_ranges: list = field(default_factory=list)
@@ -216,6 +217,7 @@ class TestRecommendationHistoryFilter:
             lat: float | None = 13.756
             lng: float | None = 100.502
             rating: float | None = 4.0
+            user_ratings_total: int | None = 50
             price_level: int | None = 2
             closed_weekdays: list = field(default_factory=list)
             closed_monthly_ranges: list = field(default_factory=list)
