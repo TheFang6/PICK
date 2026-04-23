@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Check, Loader2, Search, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { api } from "@/lib/api";
 import { getMe } from "@/lib/auth";
 import { useDebouncedValue } from "@/lib/hooks";
 import { Nav } from "@/components/pick/nav";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 interface Restaurant {
   id: string;
@@ -162,66 +160,90 @@ export default function BlacklistPage() {
   return (
     <>
       <Nav />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 space-y-6">
-        <h1 className="text-2xl font-bold">Blacklist</h1>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10 space-y-6">
+        {/* Page header */}
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
+            My{" "}
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              Blacklist
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Restaurants you don&apos;t want to see in recommendations
+          </p>
+        </div>
 
-        {/* Search filter */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Filter restaurants..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
-          />
-          {query && (
+        {/* Search + toolbar */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Filter restaurants..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full rounded-full border border-white/80 bg-white/70 py-2.5 pl-10 pr-10 text-sm backdrop-blur-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {filtered.length > 0 && (
             <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={selectAll}
+              className="text-sm text-indigo-600 hover:underline whitespace-nowrap"
             >
-              <X className="h-4 w-4" />
+              {selected.size === filtered.length ? "Deselect all" : "Select all"}
             </button>
           )}
         </div>
 
-        {/* Restaurant list with checkboxes */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              Restaurants ({filtered.length})
-            </h2>
-            {filtered.length > 0 && (
-              <button
-                onClick={selectAll}
-                className="text-xs text-primary hover:underline"
-              >
-                {selected.size === filtered.length ? "Deselect all" : "Select all"}
-              </button>
+        {/* Restaurant list card */}
+        <div className="glass overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-white/60 bg-white/30">
+            <span className="text-sm font-medium text-gray-500">
+              Available ({filtered.length})
+            </span>
+            {selected.size > 0 && (
+              <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-600">
+                {selected.size} selected
+              </span>
             )}
           </div>
 
           {loadingRestaurants ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="px-6 py-8 text-sm text-gray-400 text-center">
               {query ? "No matching restaurants" : "All restaurants are blacklisted"}
             </p>
           ) : (
-            <div className="space-y-1 max-h-[50vh] overflow-y-auto rounded-md border p-2">
+            <div className="max-h-[50vh] overflow-y-auto divide-y divide-white/50">
               {filtered.map((r) => (
                 <label
                   key={r.id}
-                  className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
+                  className={`flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-colors ${
+                    selected.has(r.id) ? "bg-indigo-50/60" : "hover:bg-white/40"
+                  }`}
                   onClick={() => toggleSelect(r.id)}
                 >
-                  <Checkbox checked={selected.has(r.id)} />
+                  <GlassCheckbox checked={selected.has(r.id)} />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 text-lg">
+                    🍽️
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{r.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {r.rating ? `${r.rating} ★` : ""}{" "}
-                      {r.source === "google_maps" ? "Maps" : "Manual"}
+                    <p className="font-semibold text-sm text-gray-900 truncate">{r.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {r.rating ? `${r.rating} ★ · ` : ""}
+                      {r.source === "google_maps" ? "Google Maps" : "Manual"}
                     </p>
                   </div>
                 </label>
@@ -230,107 +252,105 @@ export default function BlacklistPage() {
           )}
         </div>
 
-        {/* Bulk add buttons */}
+        {/* Bulk add action bar */}
         {selected.size > 0 && (
-          <div className="flex gap-2 sticky bottom-4">
-            <Button
-              className="flex-1"
+          <div className="flex gap-3 sticky bottom-6">
+            <button
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-60"
               onClick={() => bulkAdd("permanent")}
               disabled={bulkAdding}
             >
               {bulkAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Ban className="h-4 w-4 mr-2" />
+                <Ban className="h-4 w-4" />
               )}
-              Permanent ({selected.size})
-            </Button>
-            <Button
-              variant="secondary"
-              className="flex-1"
+              Ban permanently ({selected.size})
+            </button>
+            <button
+              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/80 bg-white/80 px-5 py-3 text-sm font-semibold text-gray-700 backdrop-blur-sm shadow-sm transition hover:bg-white disabled:opacity-60"
               onClick={() => bulkAdd("today")}
               disabled={bulkAdding}
             >
               {bulkAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Ban className="h-4 w-4 mr-2" />
+                <Ban className="h-4 w-4 text-indigo-500" />
               )}
-              Today only ({selected.size})
-            </Button>
+              Skip today ({selected.size})
+            </button>
           </div>
         )}
 
         {/* Current blacklist entries */}
         {loadingBlacklist ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="text-center py-4 space-y-1">
-            <p className="text-muted-foreground text-sm">No blacklist entries yet</p>
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
           </div>
         ) : (
-          <div className="space-y-4">
-            {permanent.length > 0 && (
-              <BlacklistSection
-                title="Permanent"
-                entries={permanent}
-                selectedToRemove={selectedToRemove}
-                onToggle={toggleRemove}
-                onSelectAll={() => selectAllInSection(permanent)}
-              />
-            )}
-            {today.length > 0 && (
-              <BlacklistSection
-                title="Today only"
-                entries={today}
-                selectedToRemove={selectedToRemove}
-                onToggle={toggleRemove}
-                onSelectAll={() => selectAllInSection(today)}
-              />
-            )}
-          </div>
+          entries.length > 0 && (
+            <div className="space-y-4">
+              {permanent.length > 0 && (
+                <BlacklistSection
+                  title="Permanent"
+                  entries={permanent}
+                  selectedToRemove={selectedToRemove}
+                  onToggle={toggleRemove}
+                  onSelectAll={() => selectAllInSection(permanent)}
+                />
+              )}
+              {today.length > 0 && (
+                <BlacklistSection
+                  title="Today only"
+                  entries={today}
+                  selectedToRemove={selectedToRemove}
+                  onToggle={toggleRemove}
+                  onSelectAll={() => selectAllInSection(today)}
+                />
+              )}
+            </div>
+          )
         )}
 
         {/* Bulk remove button */}
         {selectedToRemove.size > 0 && (
-          <div className="sticky bottom-4">
-            <Button
-              variant="destructive"
-              className="w-full"
+          <div className="sticky bottom-6">
+            <button
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-red-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-100 transition hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-60"
               onClick={() => setConfirmRemove(true)}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Remove ({selectedToRemove.size})
-            </Button>
+              <Trash2 className="h-4 w-4" />
+              Remove from blacklist ({selectedToRemove.size})
+            </button>
           </div>
         )}
 
-        {/* Confirm bulk remove dialog */}
+        {/* Confirm dialog */}
         <Dialog open={confirmRemove} onOpenChange={setConfirmRemove}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Remove {selectedToRemove.size} restaurant{selectedToRemove.size > 1 ? "s" : ""} from blacklist?</DialogTitle>
+              <DialogTitle>
+                Remove {selectedToRemove.size} restaurant{selectedToRemove.size > 1 ? "s" : ""} from blacklist?
+              </DialogTitle>
               <DialogDescription>
                 These restaurants will appear in recommendations again.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmRemove(false)}>
+              <button
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                onClick={() => setConfirmRemove(false)}
+              >
                 Cancel
-              </Button>
-              <Button
-                variant="destructive"
+              </button>
+              <button
+                className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60"
                 onClick={bulkRemove}
                 disabled={bulkRemoving}
               >
-                {bulkRemoving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Remove"
-                )}
-              </Button>
+                {bulkRemoving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Remove
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -339,16 +359,16 @@ export default function BlacklistPage() {
   );
 }
 
-function Checkbox({ checked }: { checked: boolean }) {
+function GlassCheckbox({ checked }: { checked: boolean }) {
   return (
     <div
-      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
         checked
-          ? "bg-primary border-primary text-primary-foreground"
-          : "border-muted-foreground/30"
+          ? "border-indigo-600 bg-gradient-to-br from-indigo-600 to-violet-600 text-white"
+          : "border-gray-300 bg-white/80"
       }`}
     >
-      {checked && <Check className="h-3.5 w-3.5" />}
+      {checked && <Check className="h-3 w-3" />}
     </div>
   );
 }
@@ -369,30 +389,32 @@ function BlacklistSection({
   const allSelected = entries.every((e) => selectedToRemove.has(e.id));
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-medium text-muted-foreground">{title} ({entries.length})</h2>
+    <div className="glass overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-white/60 bg-white/30">
+        <span className="text-sm font-medium text-gray-500">
+          {title} ({entries.length})
+        </span>
         <button
           onClick={onSelectAll}
-          className="text-xs text-primary hover:underline"
+          className="text-xs text-indigo-600 hover:underline"
         >
           {allSelected ? "Deselect all" : "Select all"}
         </button>
       </div>
-      <div className="space-y-1 rounded-md border p-2">
+      <div className="divide-y divide-white/50">
         {entries.map((entry) => (
           <label
             key={entry.id}
-            className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors"
+            className={`flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-colors ${
+              selectedToRemove.has(entry.id) ? "bg-red-50/50" : "hover:bg-white/40"
+            }`}
             onClick={() => onToggle(entry.id)}
           >
-            <Checkbox checked={selectedToRemove.has(entry.id)} />
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Ban className="h-4 w-4 text-destructive shrink-0" />
-              <span className="font-medium text-sm truncate">
-                {entry.restaurant_name || entry.restaurant_id}
-              </span>
-            </div>
+            <GlassCheckbox checked={selectedToRemove.has(entry.id)} />
+            <Ban className="h-4 w-4 text-red-400 shrink-0" />
+            <span className="flex-1 min-w-0 truncate text-sm font-medium text-gray-800">
+              {entry.restaurant_name || entry.restaurant_id}
+            </span>
           </label>
         ))}
       </div>
