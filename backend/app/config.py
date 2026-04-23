@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     office_lat: float = 18.7964464
     office_lng: float = 99.0164042
     office_radius: int = 1000
+    rating_threshold: float = 3.8
+    ratings_count_threshold: int = 20
 
     model_config = {"env_file": ".env"}
 
