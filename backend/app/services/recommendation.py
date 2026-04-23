@@ -124,10 +124,10 @@ def score_restaurants(
         price_score = 1 - (price / 4)
 
         score = (
-            rating * 0.4
-            + log1p(ratings_count) * 0.3
-            + distance_score * 0.2
-            + price_score * 0.1
+            rating * 0.50
+            + log1p(ratings_count) * 0.35
+            + distance_score * 0.05
+            + price_score * 0.10
         )
 
         scored.append((r, round(score, 4)))
