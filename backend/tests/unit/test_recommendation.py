@@ -8,10 +8,9 @@ import pytest
 from app.models.restaurant import RestaurantSource
 from app.services.recommendation import (
     _haversine,
+    build_pool,
     filter_restaurants,
     sample_candidates,
-    score_restaurants,
-    select_pool,
 )
 
 
@@ -23,6 +22,7 @@ class FakeRestaurant:
     lat: float | None = 13.756
     lng: float | None = 100.502
     rating: float | None = 4.0
+    user_ratings_total: int | None = 50
     price_level: int | None = 2
     types: list = field(default_factory=lambda: ["restaurant"])
     closed_weekdays: list = field(default_factory=list)
@@ -97,41 +97,65 @@ class TestFilterRestaurants:
         )
         assert len(result) == 1
 
+    def test_filter_excludes_rating_below_threshold(self):
+        low = _make_restaurant(rating=3.5, user_ratings_total=100)
+        ok = _make_restaurant(rating=4.2, user_ratings_total=100)
+        context = {
+            "office_lat": 13.756, "office_lng": 100.502, "radius": 1000,
+            "rating_threshold": 3.8, "ratings_count_threshold": 20,
+        }
+        result = filter_restaurants([low, ok], context)
+        assert ok in result
+        assert low not in result
 
-class TestScoreRestaurants:
-    def test_higher_rating_scores_higher(self):
-        r1 = _make_restaurant(name="High", rating=4.8, price_level=2)
-        r2 = _make_restaurant(name="Low", rating=3.0, price_level=2)
-        scored = score_restaurants([r1, r2], {"office_lat": 13.756, "office_lng": 100.502, "radius": 1000})
-        assert scored[0][0].name == "High"
-        assert scored[0][1] > scored[1][1]
+    def test_filter_excludes_ratings_count_below_threshold(self):
+        few = _make_restaurant(rating=4.5, user_ratings_total=5)
+        ok = _make_restaurant(rating=4.0, user_ratings_total=50)
+        context = {
+            "office_lat": 13.756, "office_lng": 100.502, "radius": 1000,
+            "rating_threshold": 3.8, "ratings_count_threshold": 20,
+        }
+        result = filter_restaurants([few, ok], context)
+        assert ok in result
+        assert few not in result
 
-    def test_no_rating_uses_default(self):
-        r = _make_restaurant(rating=None)
-        scored = score_restaurants([r], {})
-        assert scored[0][1] > 0
-
-    def test_sorted_descending(self):
-        restaurants = [
-            _make_restaurant(name="A", rating=3.0),
-            _make_restaurant(name="B", rating=5.0),
-            _make_restaurant(name="C", rating=4.0),
-        ]
-        scored = score_restaurants(restaurants, {})
-        names = [r.name for r, _ in scored]
-        assert names[0] == "B"
+    def test_filter_excludes_null_rating(self):
+        manual = _make_restaurant(rating=None, user_ratings_total=None)
+        context = {
+            "office_lat": 13.756, "office_lng": 100.502, "radius": 1000,
+            "rating_threshold": 3.8, "ratings_count_threshold": 20,
+        }
+        result = filter_restaurants([manual], context)
+        assert manual not in result
 
 
-class TestSelectPool:
-    def test_pool_size(self):
-        scored = [(r, 1.0) for r in [_make_restaurant(name=f"R{i}") for i in range(20)]]
-        pool = select_pool(scored, pool_size=10)
+class TestBuildPool:
+    def test_build_pool_uses_uniform_weights(self):
+        restaurants = [_make_restaurant(rating=r) for r in [4.0, 4.2, 4.5, 4.8]]
+        pool = build_pool(restaurants, pool_size=10)
+
+        assert len(pool) == 4
+        for _, weight in pool:
+            assert weight == 1.0
+
+    def test_build_pool_limits_to_pool_size(self):
+        restaurants = [_make_restaurant() for _ in range(20)]
+        pool = build_pool(restaurants, pool_size=10)
+
         assert len(pool) == 10
 
-    def test_pool_smaller_than_input(self):
-        scored = [(r, 1.0) for r in [_make_restaurant(name=f"R{i}") for i in range(3)]]
-        pool = select_pool(scored, pool_size=10)
-        assert len(pool) == 3
+    def test_build_pool_shuffles(self):
+        import random
+        from app.services.recommendation import build_pool
+
+        random.seed(42)
+        restaurants = [_make_restaurant(name=f"R{i}") for i in range(10)]
+        ordered_ids_before = [r.id for r in restaurants]
+        pool = build_pool(restaurants, pool_size=10)
+        ordered_ids_after = [r.id for r, _ in pool]
+
+        assert set(ordered_ids_before) == set(ordered_ids_after)
+        assert ordered_ids_before != ordered_ids_after
 
 
 class TestSampleCandidates:
