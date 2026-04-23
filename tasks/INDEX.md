@@ -60,13 +60,17 @@
                              017 ─▶ 018 ─▶ 019
 ```
 
+### Phase 6 — Improvements
+
+- [ ] [020 — Simplify Recommendation](./020-simplify-recommendation.md)
+
 ---
 
 ## 📊 Status Summary
 
-- Total: 19 tasks
+- Total: 20 tasks
 - Done: 16
-- In Progress: 0
+- In Progress: 1
 - Blocked: 0
 
 Update status ด้วยการเปลี่ยน `[ ]` → `[x]` ใน checklist ด้านบน

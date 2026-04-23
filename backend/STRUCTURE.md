@@ -42,7 +42,7 @@ backend/
 │   │   ├── pairing_repo.py       # Pairing token CRUD (create, validate, consume, cleanup)
 │   │   ├── poll_repo.py          # Poll CRUD (create, vote, counts, winner, expire, cancel, complete)
 │   │   ├── web_session_repo.py   # Web session CRUD (create, validate, delete, cleanup)
-│   │   ├── recommendation.py     # 5-stage recommendation pipeline (with history + blacklist filter)
+│   │   ├── recommendation.py     # Quality-threshold filter + uniform random pool (keeps gacha session shape)
 │   │   ├── restaurant_repo.py    # Restaurant CRUD operations (upsert, list, update, delete)
 │   │   ├── session_pool.py       # In-memory session pool cache (create, get, expire, TTL 2hr)
 │   │   └── user_repo.py          # User upsert by telegram_id
@@ -74,8 +74,10 @@ backend/
 │       ├── test_google_maps.py   # Google Maps service tests (10 cases)
 │       ├── test_health.py        # Health endpoint test (1 case)
 │       ├── test_history.py       # History repo + API + recommendation filter tests (19 cases)
-│       ├── test_recommendation.py # Recommendation pipeline tests (19 cases)
+│       ├── test_recommendation.py # Recommendation pipeline tests (20 cases)
+│       ├── test_restaurant_repo.py # Restaurant repo upsert tests (2 cases)
 │       ├── test_restaurants.py   # Restaurant CRUD + API tests (18 cases)
+│       ├── test_config.py        # Settings/config tests (2 cases)
 │       ├── test_attendance.py    # Attendance repo + handlers + API tests (16 cases)
 │       ├── test_blacklist_bot.py  # Blacklist bot commands: add/list/remove + callbacks (14 cases)
 │       ├── test_gacha_bot.py    # Gacha bot integration: vote reset, solo /gacha handler (7 cases)
@@ -94,7 +96,8 @@ backend/
 │       ├── 7b1ab9603757_...py    # Create pairing_tokens table
 │       ├── ef50f8b44f33_...py    # Create user_attendance table
 │       ├── a367868b9af9_...py    # Create poll_sessions + poll_votes tables
-│       └── b1c2d3e4f5a6_...py    # Create web_sessions table
+│       ├── b1c2d3e4f5a6_...py    # Create web_sessions table
+│       └── c7d8e9f0a1b2_...py    # Add user_ratings_total to restaurants
 │
 ├── scripts/                      # Utility scripts
 │   ├── check_db.py               # DB connection check
