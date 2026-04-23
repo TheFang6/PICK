@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str = ""
     base_url: str = ""
     web_url: str = "https://pick.vercel.app"
+    allowed_origins: str = "http://localhost:3000"
     debug: bool = False
     office_lat: float = 18.7964464
     office_lng: float = 99.0164042
