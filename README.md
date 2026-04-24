@@ -243,7 +243,6 @@ pick/
 **POC (ตอนนี้):** Core features ครบ — bot, poll, gacha, blacklist, history, web app
 
 **Next:**
-- Deploy backend + frontend บน Railway
 - E2E tests (Playwright)
 
 **Future:**
