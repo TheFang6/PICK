@@ -38,9 +38,9 @@
 
 ### Phase 5 — Deploy (1 วัน)
 
-- [ ] [017 — Deploy Backend to Railway](./017-deploy-backend-railway.md)
-- [ ] [018 — Deploy Frontend to Vercel](./018-deploy-frontend-vercel.md)
-- [ ] [019 — End-to-End Testing](./019-e2e-testing.md)
+- [x] [017 — Deploy Backend to Railway](./017-deploy-backend-railway.md)
+- [x] [018 — Deploy Frontend to Railway](./018-deploy-frontend-vercel.md)
+- [x] [019 — End-to-End Testing](./019-e2e-testing.md)
 
 ---
 
@@ -71,7 +71,7 @@
 ## 📊 Status Summary
 
 - Total: 22 tasks
-- Done: 18
+- Done: 21
 - In Progress: 1
 - Blocked: 0
 
