@@ -48,7 +48,7 @@ Telegram Group Chat
 
 | Command | Description |
 |---------|-------------|
-| `/lunch` | สร้าง poll เสนอ 3 ร้าน + ปุ่มโหวต (group) / แสดงตัวเลือก (DM) |
+| `/lunch` | สร้าง poll เสนอ 3 ร้าน + ปุ่มโหวต, auto-close 5 นาที (group) / แสดงตัวเลือก (DM) |
 | `/gacha` | สุ่มร้านเดี่ยว + reroll ได้ 5 รอบ |
 | `/in` | เช็คอิน — มาออฟฟิศวันนี้ |
 | `/wfh` | บอกว่า Work from Home |
@@ -200,12 +200,23 @@ Railway Project: pick-food
 
 ## Tests
 
+### Backend (unit)
+
 ```bash
 cd backend
 pytest tests/unit/ -v
 ```
 
-มี 17 test files ครอบคลุม: recommendation algorithm, gacha, poll, blacklist, history, attendance, bot handlers, web auth, Google Maps integration
+18 test files, 256 tests — recommendation algorithm, gacha, poll, blacklist, history, attendance, bot handlers, web auth, Google Maps integration, poll timeout
+
+### Frontend (E2E)
+
+```bash
+cd web
+npx playwright test
+```
+
+8 spec files, 44 tests — pairing flow, blacklist CRUD, history calendar, navigation, home page, auth guard, error states, mobile responsive
 
 ---
 
@@ -223,13 +234,14 @@ pick/
 │   │   ├── services/     # Business logic (recommendation, gacha, session pool)
 │   │   ├── config.py     # App configuration (env vars)
 │   │   └── main.py
-│   ├── alembic/          # DB migrations (8 versions)
-│   └── tests/unit/       # Unit tests (17 files)
+│   ├── alembic/          # DB migrations (9 versions)
+│   └── tests/unit/       # Unit tests (18 files, 256 tests)
 ├── web/
 │   ├── app/
 │   │   ├── blacklist/    # Blacklist management
 │   │   ├── history/      # Lunch history
 │   │   └── pair/         # Telegram pairing
+│   ├── e2e/              # Playwright E2E tests (8 specs, 44 tests)
 │   └── components/
 ├── tasks/                # Task planning files
 ├── design.md             # Design decisions
@@ -240,10 +252,10 @@ pick/
 
 ## Roadmap
 
-**POC (ตอนนี้):** Core features ครบ — bot, poll, gacha, blacklist, history, web app
+**POC (ตอนนี้):** Core features ครบ — bot, poll, gacha, blacklist, history, web app, E2E tests
 
-**Next:**
-- E2E tests (Playwright)
+**Done:**
+- E2E tests (Playwright) — 44 tests across 8 specs
 
 **Future:**
 - เก็บเวลาเปิด/ปิดร้านจาก Google Maps (Place Details API)
