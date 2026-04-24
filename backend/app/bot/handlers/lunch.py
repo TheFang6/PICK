@@ -44,7 +44,7 @@ def _build_poll_text(candidates: list, vote_counts: dict | None = None, total_vo
 
     lines = [
         f"\U0001F37D Lunch today ({date_str})",
-        f"\u23F1 Vote within 10 min | Votes: {total_votes}",
+        f"\u23F1 Vote within 5 min | Votes: {total_votes}",
         "",
     ]
 

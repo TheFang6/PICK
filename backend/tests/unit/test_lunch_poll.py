@@ -485,6 +485,24 @@ class TestCancelCallback:
             mock_poll_repo.cancel_poll.assert_not_called()
 
 
+class TestPollTimeoutConstant:
+    def test_poll_timeout_is_five_minutes(self):
+        from app.services.poll_repo import POLL_TIMEOUT_MINUTES
+
+        assert POLL_TIMEOUT_MINUTES == 5
+
+    def test_poll_display_text_shows_five_minutes(self):
+        from app.bot.handlers.lunch import _build_poll_text
+
+        r = MagicMock()
+        r.id = uuid.uuid4()
+        r.name = "Test"
+        r.rating = 4.0
+        text = _build_poll_text([r])
+        assert "5 min" in text
+        assert "10 min" not in text
+
+
 class TestPollTimeout:
     @pytest.mark.asyncio
     async def test_check_expired_polls(self):

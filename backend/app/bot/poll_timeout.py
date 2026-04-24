@@ -1,8 +1,10 @@
+import asyncio
 import logging
 import uuid
 
 from telegram.ext import Application
 
+from app.bot.application import get_application
 from app.database import SessionLocal
 from app.services import history_repo, poll_repo, restaurant_repo
 
@@ -52,3 +54,18 @@ async def _complete_poll(db, poll, application: Application) -> None:
         )
     except Exception:
         logger.exception("Failed to edit poll message for poll %s", poll.id)
+
+
+POLL_CHECK_INTERVAL_SECONDS = 60
+
+
+async def poll_expiry_loop() -> None:
+    while True:
+        try:
+            application = await get_application()
+            await check_expired_polls(application)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Error in poll expiry loop")
+        await asyncio.sleep(POLL_CHECK_INTERVAL_SECONDS)

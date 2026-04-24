@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.poll import PollSession, PollStatus, PollVote
 
-POLL_TIMEOUT_MINUTES = 10
+POLL_TIMEOUT_MINUTES = 5
 
 
 def create_poll(
