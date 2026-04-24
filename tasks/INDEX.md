@@ -63,14 +63,15 @@
 ### Phase 6 — Improvements
 
 - [x] [020 — Simplify Recommendation](./020-simplify-recommendation.md)
-- [ ] [021 — Fix Poll Timeout in Production](./021-fix-poll-timeout-production.md)
+- [x] [021 — Fix Poll Timeout in Production](./021-fix-poll-timeout-production.md)
+- [ ] [022 — Expand E2E Test Coverage](./022-expand-e2e-tests.md)
 
 ---
 
 ## 📊 Status Summary
 
-- Total: 21 tasks
-- Done: 17
+- Total: 22 tasks
+- Done: 18
 - In Progress: 1
 - Blocked: 0
 
