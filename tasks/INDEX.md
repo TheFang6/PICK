@@ -62,14 +62,15 @@
 
 ### Phase 6 — Improvements
 
-- [ ] [020 — Simplify Recommendation](./020-simplify-recommendation.md)
+- [x] [020 — Simplify Recommendation](./020-simplify-recommendation.md)
+- [ ] [021 — Fix Poll Timeout in Production](./021-fix-poll-timeout-production.md)
 
 ---
 
 ## 📊 Status Summary
 
-- Total: 20 tasks
-- Done: 16
+- Total: 21 tasks
+- Done: 17
 - In Progress: 1
 - Blocked: 0
 

@@ -20,7 +20,7 @@ backend/
 │   │
 │   ├── bot/                      # Telegram bot framework
 │   │   ├── application.py        # Bot app setup (python-telegram-bot v20+, async)
-│   │   ├── poll_timeout.py       # Background poll expiry checker (complete + announce winner)
+│   │   ├── poll_timeout.py       # Poll expiry checker + background loop (runs in FastAPI lifespan)
 │   │   ├── handlers/             # Command handlers
 │   │   │   ├── attendance.py      # /wfh and /in — attendance status commands
 │   │   │   ├── blacklist.py      # /blacklist add|list|remove — manage restaurant blacklist
@@ -82,7 +82,8 @@ backend/
 │       ├── test_blacklist_bot.py  # Blacklist bot commands: add/list/remove + callbacks (14 cases)
 │       ├── test_gacha_bot.py    # Gacha bot integration: vote reset, solo /gacha handler (7 cases)
 │       ├── test_restaurant_cmd.py # Add/edit restaurant conversation handlers (18 cases)
-│       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (24 cases)
+│       ├── test_lunch_poll.py   # Poll repo + lunch handler + vote/cancel/timeout tests (32 cases)
+│       ├── test_poll_timeout.py  # Poll expiry loop + error handling tests (2 cases)
 │       ├── test_telegram_bot.py  # Bot handlers + webhook + user/pairing repo tests (22 cases)
 │       ├── test_pair.py          # Pairing endpoint + session management tests (16 cases)
 │       └── test_web_features.py  # Restaurant search + history month filter + enriched responses (13 cases)
