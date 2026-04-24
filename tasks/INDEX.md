@@ -64,15 +64,15 @@
 
 - [x] [020 — Simplify Recommendation](./020-simplify-recommendation.md)
 - [x] [021 — Fix Poll Timeout in Production](./021-fix-poll-timeout-production.md)
-- [ ] [022 — Expand E2E Test Coverage](./022-expand-e2e-tests.md)
+- [x] [022 — Expand E2E Test Coverage](./022-expand-e2e-tests.md)
 
 ---
 
 ## 📊 Status Summary
 
 - Total: 22 tasks
-- Done: 21
-- In Progress: 1
+- Done: 22
+- In Progress: 0
 - Blocked: 0
 
 Update status ด้วยการเปลี่ยน `[ ]` → `[x]` ใน checklist ด้านบน
